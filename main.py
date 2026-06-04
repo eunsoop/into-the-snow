@@ -3,7 +3,7 @@ import pygame
 from scene import Scene
 from scene.menu_scene import MenuScene
 
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1000, 700
 
 class Game:
     def __init__(self):
