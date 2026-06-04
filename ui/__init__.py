@@ -52,9 +52,9 @@ class RichElement(SizableElement, ABC):
 
 
 class UserInterfaceLayer(Layer):
-    def __init__(self):
+    def __init__(self, elements: list[Element] = []):
         super().__init__()
-        self.elements = []
+        self.elements = elements
 
     def add_element(self, element: Element):
         self.elements.append(element)
