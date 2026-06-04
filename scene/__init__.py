@@ -8,8 +8,8 @@ class Scene(ABC):
     def __init__(self):
         self.game = None
 
-    @final
     def __set_game__(self, game): self.game = game
+
     @final
     def get_game(self): return self.game
 
@@ -39,7 +39,13 @@ class LayeredScene(Scene):
         super().__init__()
         self.layers = layers
 
+    def __set_game__(self, game):
+        super().__set_game__(game)
+        for layer in self.layers:
+            layer.__set_game__(game)
+
     def add_layer(self, layer: Layer):
+        layer.__set_game__(self.game)
         self.layers.append(layer)
 
     def event(self, event):
