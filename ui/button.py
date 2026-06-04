@@ -26,7 +26,9 @@ class Button(RichElement):
         if isinstance(self.rich_parameter.background, pygame.Surface): surface.blit(self.rich_parameter.background, dest=(*coordinate, *self.get_size()))
         if isinstance(self.rich_parameter.background, tuple): pygame.draw.rect(surface, self.rich_parameter.background, (*coordinate, *self.get_size()), self.rich_parameter.radius)
 
-        if self.label: self.label.update(surface, coordinate)
+        if self.label:
+            size = self.label.get_rendered_size()
+            self.label.update(surface, (coordinate[0] + self.size[0] // 2 - size[0] // 2, coordinate[1] + self.size[1] // 2 - size[1] // 2))
         if self.disabled: pygame.draw.rect(surface, (128, 128, 128), (*coordinate, *self.get_size()), self.rich_parameter.radius)
 
 
