@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 from typing import final
 
+import pygame
 from pygame import Surface
 
 
@@ -53,3 +54,27 @@ class LayeredScene(Scene):
 
     def paint(self, surface: Surface):
         for layer in self.layers: layer.paint(surface)
+
+
+class WeightedBackgroundLayer(Layer):
+    def __init__(self, backgrounds: list[tuple[str, float]]):
+        super().__init__()
+        def scale_image(bg):
+            path, weight = bg
+            img = pygame.image.load(path)
+            scale = max(1000 / img.get_width(), 700 / img.get_height())
+            return pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale))), weight
+
+        self.backgrounds = map(scale_image, backgrounds)
+        self.tick = 0
+
+    def event(self, event): pass
+
+    def tick(self):
+        self.tick += 1
+
+    def paint(self, surface: Surface):
+        for bg in self.backgrounds:
+            img, weight = bg
+            surface.blit(img, (self.tick*weight, 0))
+

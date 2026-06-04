@@ -14,7 +14,7 @@ class MenuBackgroundLayer(Layer):
         
         def scale_image(path):
             img = pygame.image.load(path)
-            scale = max(800 / img.get_width(), 600 / img.get_height())
+            scale = max(1000 / img.get_width(), 700 / img.get_height())
             return pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
         
         self.bg = scale_image("assets/images/background/menu/Plan 5.png")
