@@ -1,9 +1,7 @@
-from asyncio import Event
-
 import pygame
 
 from scene import Scene
-from scene.drawing_scene import DrawingScene
+from scene.menu_scene import MenuScene
 
 WIDTH, HEIGHT = 800, 600
 
@@ -12,18 +10,22 @@ class Game:
         pygame.init()
         self.surface = pygame.display.set_mode((WIDTH, HEIGHT))
         self.is_running = True
+        self.clock = pygame.time.Clock()
+        self.dt = 0
 
         self.scenes = {}
         self.current_scene = None
 
+    def get_dt(self): return self.dt
 
-    def register_scene(self, id: str, scene: Scene):
-        self.scenes[id] = scene
+
+    def register_scene(self, scene_id: str, scene: Scene):
+        self.scenes[scene_id] = scene
         scene.__set_game__(self)
 
 
-    def set_scene(self, id: str):
-        self.current_scene = self.scenes[id]
+    def set_scene(self, scene_id: str):
+        self.current_scene = self.scenes[scene_id]
 
 
     def event(self, event):
@@ -31,13 +33,15 @@ class Game:
 
 
     def loop(self):
+        self.dt = self.clock.tick(60) / 1000.0
+
         self.surface.fill((0, 0, 0))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: self.quit()
             self.event(event)
 
-        self.current_scene.paint()
+        self.current_scene.paint(self.surface)
         pygame.display.flip()
 
 
@@ -52,6 +56,6 @@ class Game:
 
 if __name__ == "__main__":
     game = Game()
-    game.register_scene("drawing", DrawingScene())
-    game.set_scene("drawing")
+    game.register_scene("menu", MenuScene())
+    game.set_scene("menu")
     game.run()
