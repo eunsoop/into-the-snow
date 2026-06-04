@@ -42,8 +42,8 @@ class RichElementParameter:
 
 
 class RichElement(SizableElement, ABC):
-    def __init__(self, rich: RichElementParameter, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, rect: Rect, rich: RichElementParameter, *args, **kwargs):
+        super().__init__(rect, *args, **kwargs)
         self.rich = rich
 
     @property

@@ -1,7 +1,7 @@
 from typing import Callable
 
 import pygame
-from pygame import Surface
+from pygame import Surface, Rect
 
 from ui import RichElement
 from ui.label import Label
@@ -10,12 +10,13 @@ from ui.label import Label
 class Button(RichElement):
     def __init__(
         self,
+        rect: Rect,
         label: Label | None = None,
         disabled: bool = False,
         on_pressed: Callable | None = None,
         *args, **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(rect,*args, **kwargs)
         self.label = label
         self.disabled = disabled
         self.on_pressed = on_pressed
