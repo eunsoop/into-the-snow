@@ -17,3 +17,17 @@ class Fonts:
     @classmethod
     def JacquardaBastarda(cls, size: int = 16):
         return Fonts.__get_font__("assets/fonts/Jacquarda_Bastarda_9/JacquardaBastarda9-Regular.ttf", size)
+
+
+class Sprite:
+    def __init__(self, x: float, y: float, image: pygame.Surface):
+        self.x = x
+        self.y = y
+        self.image = image
+        self.rect = self.image.get_rect(center=(int(self.x), int(self.y)))
+
+    def update(self):
+        self.rect.center = (int(self.x), int(self.y))
+
+    def paint(self, surface: pygame.Surface):
+        surface.blit(self.image, self.rect)
