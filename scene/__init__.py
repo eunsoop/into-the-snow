@@ -4,6 +4,8 @@ from typing import final
 import pygame
 from pygame import Surface
 
+from entity import Entity
+
 
 class Scene(ABC):
     def __init__(self):
@@ -36,9 +38,9 @@ class Layer(ABC):
 
 
 class LayeredScene(Scene):
-    def __init__(self, layers: list[Layer] = []):
+    def __init__(self, layers: list[Layer] = None):
         super().__init__()
-        self.layers = layers
+        self.layers = layers if layers is not None else []
 
     def __set_game__(self, game):
         super().__set_game__(game)
@@ -54,6 +56,34 @@ class LayeredScene(Scene):
 
     def paint(self, surface: Surface):
         for layer in self.layers: layer.paint(surface)
+
+
+class GameLayer(Layer):
+    def __init__(self):
+        super().__init__()
+        self.entities = []
+
+    def add_entity(self, entity: Entity):
+        self.entities.append(entity)
+        entity.layer = self
+
+    def remove_entity(self, entity: Entity):
+        if entity in self.entities:
+            self.entities.remove(entity)
+            entity.layer = None
+
+    def event(self, event):
+        for e in self.entities:
+            e.event(event)
+
+    def update(self): pass
+
+    def paint(self, surface: Surface):
+        self.update()
+        for e in self.entities:
+            e.update()
+        for e in sorted(self.entities, key=lambda e: e.z_index):
+            e.paint(surface)
 
 
 class WeightedBackgroundLayer(Layer):
