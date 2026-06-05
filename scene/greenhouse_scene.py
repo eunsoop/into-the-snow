@@ -12,7 +12,8 @@ class GreenhouseGameLayer(GameLayer):
         self.player = Player(50, 300)
         self.guards = [Guard(300, 200, 200, 500), Guard(500, 400, 400, 700)]
         self.bullets = []
-        self.door_rect = pygame.Rect(900, 300, 50, 100)
+        self.door_rect = pygame.Rect(0, 0, 50, 100)
+        self.door_rect.center = (900, 300)
         
         self.add_entity(self.player)
         for g in self.guards:
