@@ -1,7 +1,9 @@
 import pygame
 
 from scene import Scene
+from scene.intro_scene import IntroScene
 from scene.menu_scene import MenuScene
+from scene.tail_workshop_scene import TailWorkshopScene
 
 WIDTH, HEIGHT = 1000, 700
 
@@ -57,5 +59,7 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.register_scene("menu", MenuScene())
-    game.set_scene("menu")
+    game.register_scene("ingame.tailworkshop", TailWorkshopScene())
+    game.register_scene("intro", IntroScene())
+    game.set_scene("intro")
     game.run()

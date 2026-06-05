@@ -12,7 +12,8 @@ class Boss(Entity):
         self.direction = 1
         self.width = 64
         self.height = 64
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.rect = pygame.Rect(0, 0, self.width, self.height)
+        self.rect.center = (int(self.x), int(self.y))
         self.hp = 100
 
     def update(self):
@@ -25,7 +26,7 @@ class Boss(Entity):
             elif self.y < self.min_y:
                 self.y = self.min_y
                 self.direction = 1
-            self.rect.topleft = (self.x, self.y)
+            self.rect.center = (int(self.x), int(self.y))
 
     def paint(self, surface: pygame.Surface):
         pygame.draw.rect(surface, (200, 0, 200), self.rect)
@@ -40,7 +41,8 @@ class Guard(Entity):
         self.direction = 1
         self.width = 32
         self.height = 32
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.rect = pygame.Rect(0, 0, self.width, self.height)
+        self.rect.center = (int(self.x), int(self.y))
         self.is_stunned = False
 
     def update(self):
@@ -53,7 +55,7 @@ class Guard(Entity):
             elif self.x < self.min_x:
                 self.x = self.min_x
                 self.direction = 1
-            self.rect.topleft = (int(self.x), int(self.y))
+            self.rect.center = (int(self.x), int(self.y))
 
     def paint(self, surface: pygame.Surface):
         color = (100, 100, 255) if self.is_stunned else (255, 0, 0)
@@ -66,14 +68,15 @@ class Bullet(Entity):
         self.dx = dx
         self.dy = dy
         self.speed = 300
-        self.rect = pygame.Rect(self.x, self.y, 8, 8)
+        self.rect = pygame.Rect(0, 0, 8, 8)
+        self.rect.center = (int(self.x), int(self.y))
 
     def update(self):
         if self.layer and self.layer.get_game():
             dt = self.layer.get_game().get_dt()
             self.x += self.dx * self.speed * dt
             self.y += self.dy * self.speed * dt
-            self.rect.topleft = (int(self.x), int(self.y))
+            self.rect.center = (int(self.x), int(self.y))
 
     def paint(self, surface: pygame.Surface):
         pygame.draw.rect(surface, (255, 255, 0), self.rect)

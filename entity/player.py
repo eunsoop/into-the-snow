@@ -15,7 +15,8 @@ class Player(Entity):
         self.scrap = 0
         self.has_stun_gun = False
         self.has_hack_tool = False
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.rect = pygame.Rect(0, 0, self.width, self.height)
+        self.rect.center = (int(self.x), int(self.y))
 
     def update(self):
         if self.layer and self.layer.get_game():
@@ -29,7 +30,7 @@ class Player(Entity):
 
             self.x += dx
             self.y += dy
-            self.rect.topleft = (int(self.x), int(self.y))
+            self.rect.center = (int(self.x), int(self.y))
 
             self.temperature -= 1.0 * dt
             if self.temperature <= 0:
