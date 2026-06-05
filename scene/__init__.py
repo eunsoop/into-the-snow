@@ -51,6 +51,18 @@ class LayeredScene(Scene):
         layer.__set_game__(self.game)
         self.layers.append(layer)
 
+    def remove_layer(self, layer: Layer):
+        if layer in self.layers:
+            self.layers.remove(layer)
+            layer.__set_game__(None)
+
+    def replace_layer(self, old_layer: Layer, new_layer: Layer):
+        if old_layer in self.layers:
+            self.layers.insert(self.layers.index(old_layer), new_layer)
+            self.layers.remove(old_layer)
+            new_layer.__set_game__(self.game)
+            old_layer.__set_game__(None)
+
     def event(self, event):
         for layer in self.layers: layer.event(event)
 
@@ -95,16 +107,16 @@ class WeightedBackgroundLayer(Layer):
             scale = max(1000 / img.get_width(), 700 / img.get_height())
             return pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale))), weight
 
-        self.backgrounds = map(scale_image, backgrounds)
-        self.tick = 0
+        self.backgrounds = list(map(scale_image, backgrounds))
+        self.tick_time = 0
 
     def event(self, event): pass
 
     def tick(self):
-        self.tick += 1
+        self.tick_time += 1
 
     def paint(self, surface: Surface):
         for bg in self.backgrounds:
             img, weight = bg
-            surface.blit(img, (self.tick*weight, 0))
-
+            surface.blit(img, (-(self.tick_time*weight%(img.get_width())), 0))
+            surface.blit(img, (img.get_width()-(self.tick_time*weight%(img.get_width())), 0))
