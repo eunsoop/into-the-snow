@@ -21,6 +21,9 @@ class Game:
     def get_dt(self): return self.dt
 
 
+    def get_surface(self): return self.surface
+
+
     def register_scene(self, scene_id: str, scene: Scene):
         self.scenes[scene_id] = scene
         scene.__set_game__(self)
