@@ -3,8 +3,7 @@ import random
 import pygame
 from pygame.locals import *
 
-from core import LayeredScene, GameLayer, Fonts
-from entity.player import Player
+from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector
 from entity.stationary import CraftingTable, Furnace, Hatch
 from tilemap import TiledImage, Tilemap, Viewpoint
 
@@ -42,8 +41,7 @@ class TailWorkshopGameLayer(GameLayer):
         self.tilemap.add_stationary(self.crafting_table)
         self.tilemap.add_stationary(self.hatch)
         
-        self.player = Player(150, 300)
-        self.add_entity(self.player)
+        self.player = None
 
         self.state = "NORMAL"
         self.scavenge_timer = 0.0
@@ -56,30 +54,26 @@ class TailWorkshopGameLayer(GameLayer):
 
     def on_enter(self):
         game = self.get_game()
-        self.player.temperature = game.player_data["temperature"]
-        self.player.health = game.player_data["health"]
-        self.player.frozen_scrap = game.player_data["frozen_scrap"]
-        self.player.alpine_resin = game.player_data["alpine_resin"]
-        self.player.has_igniter = game.player_data["has_igniter"]
-        self.player.has_keychip = game.player_data["has_keychip"]
-        self.player.has_stun_gun = game.player_data["has_stun_gun"]
+        self.player = game.player
+        self.add_entity(self.player)
 
-        if "transition_x" in game.player_data:
-            self.player.x = game.player_data.pop("transition_x")
+        tx = self.player.pop_transition_x()
+        if tx is not None:
+            self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
 
-        if "teleport_msg" in game.player_data:
-            game.player_data.pop("teleport_msg")
+        if self.player.pop_spotted_shake():
+            self.add_effector(ShakeEffector(duration=0.5, intensity=15.0))
+            self.add_effector(FlashEffector(duration=0.25, color=(255, 0, 0), max_alpha=180))
 
-    def save_player_data(self):
-        game = self.get_game()
-        game.player_data["temperature"] = self.player.temperature
-        game.player_data["health"] = self.player.health
-        game.player_data["frozen_scrap"] = self.player.frozen_scrap
-        game.player_data["alpine_resin"] = self.player.alpine_resin
-        game.player_data["has_igniter"] = self.player.has_igniter
-        game.player_data["has_keychip"] = self.player.has_keychip
-        game.player_data["has_stun_gun"] = self.player.has_stun_gun
+    def reset(self):
+        if self.player and self.player in self.entities:
+            self.remove_entity(self.player)
+        self.player = None
+        self.state = "NORMAL"
+        self.scavenge_items.clear()
+        self.hook_state = "IDLE"
+        self.hook_rect.y = 100
 
     def event(self, event):
         if self.state == "SCAVENGE":
@@ -168,6 +162,8 @@ class TailWorkshopGameLayer(GameLayer):
                     if self.hook_rect.colliderect(item["rect"]):
                         if item["type"] == "rock":
                             self.player.health = max(0.0, self.player.health - 10.0)
+                            self.add_effector(ShakeEffector(duration=0.3, intensity=10.0))
+                            self.add_effector(FlashEffector(duration=0.15, color=(255, 0, 0), max_alpha=128))
                             self.hook_state = "RETRACT"
                             self.scavenge_items.remove(item)
                         else:
@@ -183,13 +179,13 @@ class TailWorkshopGameLayer(GameLayer):
         super().update()
         
         if self.player.x < 15:
-            self.save_player_data()
-            self.game.player_data["transition_x"] = 2800
+            self.player.transition_x = 2800
+            self.remove_entity(self.player)
             self.game.set_scene("ingame.engineroom")
             return
         elif self.player.x > 1905:
-            self.save_player_data()
-            self.game.player_data["transition_x"] = 100
+            self.player.transition_x = 100
+            self.remove_entity(self.player)
             self.game.set_scene("ingame.guardedstorage")
             return
 
@@ -260,3 +256,6 @@ class TailWorkshopScene(LayeredScene):
 
     def on_enter(self):
         self.logic_layer.on_enter()
+
+    def reset(self):
+        self.logic_layer.reset()

@@ -1,6 +1,7 @@
 import pygame
 
 from core import Scene
+from entity.player import Player
 from scene.intro_scene import IntroScene
 from scene.menu_scene import MenuScene
 from scene.tail_workshop_scene import TailWorkshopScene
@@ -23,32 +24,13 @@ class Game:
         self.scenes = {}
         self.current_scene = None
 
-        self.player_data = {
-            "temperature": 100.0,
-            "health": 100.0,
-            "frozen_scrap": 0,
-            "alpine_resin": 0,
-            "has_igniter": False,
-            "has_keychip": False,
-            "has_stun_gun": False,
-            "engine_repaired": False,
-            "detachment_timer": 30.0,
-            "boss_hp": 100
-        }
+        self.player = Player(150, 300)
 
     def reset_player_data(self):
-        self.player_data = {
-            "temperature": 100.0,
-            "health": 100.0,
-            "frozen_scrap": 0,
-            "alpine_resin": 0,
-            "has_igniter": False,
-            "has_keychip": False,
-            "has_stun_gun": False,
-            "engine_repaired": False,
-            "detachment_timer": 30.0,
-            "boss_hp": 100
-        }
+        self.player = Player(150, 300)
+        for scene in self.scenes.values():
+            if hasattr(scene, "reset"):
+                scene.reset()
 
     def get_dt(self) -> float:
         return self.dt

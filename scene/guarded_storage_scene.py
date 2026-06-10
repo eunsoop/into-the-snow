@@ -1,11 +1,10 @@
 import pygame
 from pygame.locals import *
 
+from core import LayeredScene, GameLayer, Fonts, ShakeEffector
 from entity import Entity
-from entity.player import Player
 from entity.enemy import Guard
 from entity.projectile import Bullet
-from core import LayeredScene, GameLayer, Fonts
 from tilemap import TiledImage, Tilemap, Viewpoint
 
 
@@ -47,8 +46,7 @@ class GuardedStorageGameLayer(GameLayer):
         viewpoint = Viewpoint(0, 0, 3.0)
         self.tilemap = Tilemap(tiled_image, map_data, viewpoint)
         
-        self.player = Player(150, 300)
-        self.add_entity(self.player)
+        self.player = None
         
         self.guards = [
             Guard(500, 200, 300, 800),
@@ -66,28 +64,45 @@ class GuardedStorageGameLayer(GameLayer):
 
     def on_enter(self):
         game = self.get_game()
-        self.player.temperature = game.player_data["temperature"]
-        self.player.health = game.player_data["health"]
-        self.player.frozen_scrap = game.player_data["frozen_scrap"]
-        self.player.alpine_resin = game.player_data["alpine_resin"]
-        self.player.has_igniter = game.player_data["has_igniter"]
-        self.player.has_keychip = game.player_data["has_keychip"]
-        self.player.has_stun_gun = game.player_data["has_stun_gun"]
+        self.player = game.player
+        self.add_entity(self.player)
+
+        tx = self.player.pop_transition_x()
+        if tx is not None:
+            self.player.x = tx
+            self.player.rect.center = (int(self.player.x), int(self.player.y))
 
         if self.player.has_igniter and self.igniter in self.entities:
             self.remove_entity(self.igniter)
         if self.player.has_keychip and self.keychip in self.entities:
             self.remove_entity(self.keychip)
 
-    def save_player_data(self):
-        game = self.get_game()
-        game.player_data["temperature"] = self.player.temperature
-        game.player_data["health"] = self.player.health
-        game.player_data["frozen_scrap"] = self.player.frozen_scrap
-        game.player_data["alpine_resin"] = self.player.alpine_resin
-        game.player_data["has_igniter"] = self.player.has_igniter
-        game.player_data["has_keychip"] = self.player.has_keychip
-        game.player_data["has_stun_gun"] = self.player.has_stun_gun
+    def reset(self):
+        if self.player and self.player in self.entities:
+            self.remove_entity(self.player)
+        self.player = None
+        bullets = [e for e in self.entities if isinstance(e, Bullet)]
+        for b in bullets:
+            self.remove_entity(b)
+        for g in self.guards:
+            if g in self.entities:
+                self.remove_entity(g)
+        self.guards = [
+            Guard(500, 200, 300, 800),
+            Guard(1100, 400, 700, 1400),
+            Guard(1800, 250, 1300, 2200),
+            Guard(2400, 450, 1800, 2800)
+        ]
+        for g in self.guards:
+            self.add_entity(g)
+        if self.igniter in self.entities:
+            self.remove_entity(self.igniter)
+        if self.keychip in self.entities:
+            self.remove_entity(self.keychip)
+        self.igniter = StolenPart(1200, 200, "igniter")
+        self.keychip = StolenPart(2500, 400, "keychip")
+        self.add_entity(self.igniter)
+        self.add_entity(self.keychip)
 
     def event(self, event):
         super().event(event)
@@ -97,14 +112,15 @@ class GuardedStorageGameLayer(GameLayer):
                 b = Bullet(self.player.x + 24, self.player.y, 1.0, 0.0, is_enemy=False)
                 b.speed = 350
                 self.add_entity(b)
+                self.add_effector(ShakeEffector(duration=0.15, intensity=3.0))
 
     def update(self):
         super().update()
         dt = self.get_game().get_dt()
 
         if self.player.x < 15:
-            self.save_player_data()
-            self.game.player_data["transition_x"] = 2800
+            self.player.transition_x = 2800
+            self.remove_entity(self.player)
             self.game.set_scene("ingame.tailworkshop")
             return
 
@@ -130,9 +146,9 @@ class GuardedStorageGameLayer(GameLayer):
         for g in self.guards:
             if not g.is_stunned and self.player.rect.colliderect(g.los_rect):
                 self.player.health = max(10.0, self.player.health - 20.0)
-                self.save_player_data()
-                
-                self.game.player_data["transition_x"] = 1000
+                self.player.transition_x = 1000
+                self.player.spotted_shake = True
+                self.remove_entity(self.player)
                 self.game.set_scene("ingame.tailworkshop")
                 return
 
@@ -166,3 +182,6 @@ class GuardedStorageScene(LayeredScene):
 
     def on_enter(self):
         self.logic_layer.on_enter()
+
+    def reset(self):
+        self.logic_layer.reset()

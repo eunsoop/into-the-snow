@@ -1,11 +1,10 @@
 import pygame
 from pygame.locals import *
 
+from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector
 from entity import Entity
-from entity.player import Player
 from entity.enemy import Boss
 from entity.projectile import Bullet
-from core import LayeredScene, GameLayer, Fonts
 from tilemap import TiledImage, Tilemap, Viewpoint
 
 
@@ -52,48 +51,41 @@ class EngineRoomGameLayer(GameLayer):
         self.engine = BrokenEngineCore(200, 300)
         self.tilemap.add_stationary(self.engine)
         
-        self.player = Player(2800, 300)
-        self.add_entity(self.player)
-        
+        self.player = None
         self.boss = None
         self.engine_repaired = False
         self.detachment_timer = 30.0
+        self.boss_hp = 100
 
     def on_enter(self):
         game = self.get_game()
-        self.player.temperature = game.player_data["temperature"]
-        self.player.health = game.player_data["health"]
-        self.player.frozen_scrap = game.player_data["frozen_scrap"]
-        self.player.alpine_resin = game.player_data["alpine_resin"]
-        self.player.has_igniter = game.player_data["has_igniter"]
-        self.player.has_keychip = game.player_data["has_keychip"]
-        self.player.has_stun_gun = game.player_data["has_stun_gun"]
+        self.player = game.player
+        self.add_entity(self.player)
         
-        self.engine_repaired = game.player_data["engine_repaired"]
-        self.detachment_timer = game.player_data["detachment_timer"]
+        tx = self.player.pop_transition_x()
+        if tx is not None:
+            self.player.x = tx
+            self.player.rect.center = (int(self.player.x), int(self.player.y))
         
         if self.engine_repaired:
-            if self.boss not in self.entities and game.player_data["boss_hp"] > 0:
+            if self.boss not in self.entities and self.boss_hp > 0:
                 self.boss = Boss(2400, 300, 100, 600)
-                self.boss.hp = game.player_data["boss_hp"]
+                self.boss.hp = self.boss_hp
                 self.add_entity(self.boss)
 
-    def save_player_data(self):
-        game = self.get_game()
-        game.player_data["temperature"] = self.player.temperature
-        game.player_data["health"] = self.player.health
-        game.player_data["frozen_scrap"] = self.player.frozen_scrap
-        game.player_data["alpine_resin"] = self.player.alpine_resin
-        game.player_data["has_igniter"] = self.player.has_igniter
-        game.player_data["has_keychip"] = self.player.has_keychip
-        game.player_data["has_stun_gun"] = self.player.has_stun_gun
-        
-        game.player_data["engine_repaired"] = self.engine_repaired
-        game.player_data["detachment_timer"] = self.detachment_timer
+    def reset(self):
+        if self.player and self.player in self.entities:
+            self.remove_entity(self.player)
+        self.player = None
+        self.engine_repaired = False
+        self.detachment_timer = 30.0
+        self.boss_hp = 100
         if self.boss in self.entities:
-            game.player_data["boss_hp"] = self.boss.hp
-        else:
-            game.player_data["boss_hp"] = 0
+            self.remove_entity(self.boss)
+        self.boss = None
+        bullets = [e for e in self.entities if isinstance(e, Bullet)]
+        for b in bullets:
+            self.remove_entity(b)
 
     def event(self, event):
         super().event(event)
@@ -103,6 +95,7 @@ class EngineRoomGameLayer(GameLayer):
                 b = Bullet(self.player.x + 24, self.player.y, 1.0, 0.0, is_enemy=False)
                 b.speed = 350
                 self.add_entity(b)
+                self.add_effector(ShakeEffector(duration=0.15, intensity=3.0))
 
         if event.type == KEYDOWN and event.key == K_e:
             if self.player.rect.colliderect(self.engine.rect):
@@ -125,8 +118,8 @@ class EngineRoomGameLayer(GameLayer):
         dt = self.get_game().get_dt()
         
         if self.player.x > 2900:
-            self.save_player_data()
-            self.game.player_data["transition_x"] = 100
+            self.player.transition_x = 100
+            self.remove_entity(self.player)
             self.game.set_scene("ingame.tailworkshop")
             return
 
@@ -134,7 +127,7 @@ class EngineRoomGameLayer(GameLayer):
             self.detachment_timer -= dt
             if self.detachment_timer <= 0:
                 self.detachment_timer = 0
-                self.save_player_data()
+                self.remove_entity(self.player)
                 self.game.set_scene("gamewin")
                 return
 
@@ -143,16 +136,20 @@ class EngineRoomGameLayer(GameLayer):
             if b.is_enemy:
                 if b.rect.colliderect(self.player.rect):
                     self.player.health = max(0.0, self.player.health - 15.0)
+                    self.add_effector(ShakeEffector(duration=0.3, intensity=10.0))
+                    self.add_effector(FlashEffector(duration=0.15, color=(255, 0, 0), max_alpha=128))
                     if b in self.entities:
                         self.remove_entity(b)
             else:
                 if self.boss in self.entities and b.rect.colliderect(self.boss.rect):
                     self.boss.hp -= 10
+                    self.boss_hp = self.boss.hp
                     if b in self.entities:
                         self.remove_entity(b)
                     
                     if self.boss.hp <= 0:
                         self.remove_entity(self.boss)
+                        self.boss_hp = 0
                     break
 
     def paint(self, surface: pygame.Surface):
@@ -188,3 +185,6 @@ class EngineRoomScene(LayeredScene):
 
     def on_enter(self):
         self.logic_layer.on_enter()
+
+    def reset(self):
+        self.logic_layer.reset()

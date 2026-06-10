@@ -23,6 +23,9 @@ class Scene(ABC):
     def paint(self, surface: Surface):
         pass
 
+    def reset(self):
+        pass
+
 
 class LayeredScene(Scene):
     def __init__(self, layers: list = None):
@@ -46,6 +49,11 @@ class LayeredScene(Scene):
     def add_effector(self):
         pass
 
+    def reset(self):
+        for layer in self.layers:
+            if hasattr(layer, "reset"):
+                layer.reset()
+
     def remove_layer(self, layer):
         if layer in self.layers:
             self.layers.remove(layer)
@@ -63,7 +71,21 @@ class LayeredScene(Scene):
             layer.event(event)
 
     def paint(self, surface: Surface):
+        dt = self.game.get_dt() if self.game else 0.0
         for layer in self.layers:
             layer.surface.fill((0, 0, 0, 0))
             layer.paint(layer.surface)
-            surface.blit(layer.surface, (0, 0))
+
+            offset_x, offset_y = 0.0, 0.0
+            active_effectors = []
+            for eff in layer.effectors:
+                eff.update(dt)
+                if not eff.is_finished():
+                    ox, oy = eff.apply_offset()
+                    offset_x += ox
+                    offset_y += oy
+                    eff.apply_post(layer.surface)
+                    active_effectors.append(eff)
+            layer.effectors = active_effectors
+
+            surface.blit(layer.surface, (int(offset_x), int(offset_y)))

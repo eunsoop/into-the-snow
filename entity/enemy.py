@@ -1,6 +1,7 @@
 import pygame
 
 from entity import Entity
+from entity.projectile import Bullet
 
 
 class Boss(Entity):
@@ -33,7 +34,6 @@ class Boss(Entity):
             self.shoot_timer += dt
             if self.shoot_timer >= 1.5:
                 self.shoot_timer = 0.0
-                from entity.projectile import Bullet
                 b = Bullet(self.x - 40, self.y, -1.0, 0.0, is_enemy=True)
                 b.speed = 220
                 self.layer.add_entity(b)

@@ -17,8 +17,20 @@ class Player(Entity):
         self.has_igniter = False
         self.has_keychip = False
         self.has_stun_gun = False
+        self.transition_x = None
+        self.spotted_shake = False
         self.rect = pygame.Rect(0, 0, self.width, self.height)
         self.rect.center = (int(self.x), int(self.y))
+
+    def pop_transition_x(self) -> float | None:
+        val = self.transition_x
+        self.transition_x = None
+        return val
+
+    def pop_spotted_shake(self) -> bool:
+        val = self.spotted_shake
+        self.spotted_shake = False
+        return val
 
     def update(self):
         if self.layer and self.layer.get_game():
