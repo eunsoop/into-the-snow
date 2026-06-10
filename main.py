@@ -1,11 +1,16 @@
 import pygame
 
-from scene import Scene
+from core import Scene
 from scene.intro_scene import IntroScene
 from scene.menu_scene import MenuScene
 from scene.tail_workshop_scene import TailWorkshopScene
+from scene.guarded_storage_scene import GuardedStorageScene
+from scene.engine_room_scene import EngineRoomScene
+from scene.game_over_scene import GameOverScene
+from scene.game_win_scene import GameWinScene
 
 WIDTH, HEIGHT = 1000, 700
+
 
 class Game:
     def __init__(self):
@@ -18,24 +23,51 @@ class Game:
         self.scenes = {}
         self.current_scene = None
 
-    def get_dt(self): return self.dt
+        self.player_data = {
+            "temperature": 100.0,
+            "health": 100.0,
+            "frozen_scrap": 0,
+            "alpine_resin": 0,
+            "has_igniter": False,
+            "has_keychip": False,
+            "has_stun_gun": False,
+            "engine_repaired": False,
+            "detachment_timer": 30.0,
+            "boss_hp": 100
+        }
 
+    def reset_player_data(self):
+        self.player_data = {
+            "temperature": 100.0,
+            "health": 100.0,
+            "frozen_scrap": 0,
+            "alpine_resin": 0,
+            "has_igniter": False,
+            "has_keychip": False,
+            "has_stun_gun": False,
+            "engine_repaired": False,
+            "detachment_timer": 30.0,
+            "boss_hp": 100
+        }
 
-    def get_surface(self): return self.surface
+    def get_dt(self) -> float:
+        return self.dt
 
+    def get_surface(self) -> pygame.Surface:
+        return self.surface
 
     def register_scene(self, scene_id: str, scene: Scene):
         self.scenes[scene_id] = scene
         scene.__set_game__(self)
 
-
     def set_scene(self, scene_id: str):
         self.current_scene = self.scenes[scene_id]
+        if hasattr(self.current_scene, "on_enter"):
+            self.current_scene.on_enter()
 
-
-    def event(self, event):
-        self.current_scene.event(event)
-
+    def event(self, event: pygame.event.Event):
+        if self.current_scene:
+            self.current_scene.event(event)
 
     def loop(self):
         self.dt = self.clock.tick(60) / 1000.0
@@ -43,26 +75,32 @@ class Game:
         self.surface.fill((0, 0, 0))
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: self.quit()
+            if event.type == pygame.QUIT:
+                self.quit()
             self.event(event)
 
-        self.current_scene.paint(self.surface)
+        if self.current_scene:
+            self.current_scene.paint(self.surface)
         pygame.display.flip()
-
 
     def quit(self):
         self.is_running = False
         pygame.quit()
 
-
     def run(self):
-        while self.is_running: self.loop()
+        while self.is_running:
+            self.loop()
 
 
 if __name__ == "__main__":
     game = Game()
     game.register_scene("menu", MenuScene())
-    game.register_scene("ingame.tailworkshop", TailWorkshopScene())
     game.register_scene("intro", IntroScene())
-    game.set_scene("intro")
+    game.register_scene("ingame.engineroom", EngineRoomScene())
+    game.register_scene("ingame.tailworkshop", TailWorkshopScene())
+    game.register_scene("ingame.guardedstorage", GuardedStorageScene())
+    game.register_scene("gameover", GameOverScene())
+    game.register_scene("gamewin", GameWinScene())
+    
+    game.set_scene("menu")
     game.run()

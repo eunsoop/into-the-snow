@@ -6,6 +6,7 @@ from entity import Entity
 class Furnace(Entity):
     def __init__(self, x: float, y: float):
         super().__init__(x, y)
+        self.is_solid = True
         self.rect = pygame.Rect(0, 0, 64, 64)
         self.rect.center = (int(self.x), int(self.y))
 
@@ -16,6 +17,7 @@ class Furnace(Entity):
 class CraftingTable(Entity):
     def __init__(self, x: float, y: float):
         super().__init__(x, y)
+        self.is_solid = True
         self.rect = pygame.Rect(0, 0, 64, 64)
         self.rect.center = (int(self.x), int(self.y))
 
@@ -26,6 +28,7 @@ class CraftingTable(Entity):
 class Hatch(Entity):
     def __init__(self, x: float, y: float):
         super().__init__(x, y)
+        self.is_solid = False
         self.rect = pygame.Rect(0, 0, 64, 64)
         self.rect.center = (int(self.x), int(self.y))
 

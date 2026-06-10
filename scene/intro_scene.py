@@ -1,6 +1,7 @@
 import pygame
 
-from scene import LayeredScene, WeightedBackgroundLayer, RepeatingImageLayer, TrainLayer
+from core import LayeredScene, Fonts
+from scene.background_layers import WeightedBackgroundLayer, RepeatingImageLayer, TrainLayer
 
 
 class IntroScene(LayeredScene):
@@ -43,9 +44,38 @@ class IntroScene(LayeredScene):
 
         self.add_layers(self.stage1)
 
+    def event(self, event):
+        super().event(event)
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            self.game.set_scene("ingame.tailworkshop")
 
     def paint(self, surface: pygame.Surface):
         super().paint(surface)
         self.stage1[0].tick()
         self.stage1[1].tick()
 
+        overlay = pygame.Rect(100, 100, 800, 360)
+        overlay_surf = pygame.Surface((800, 360), pygame.SRCALPHA)
+        overlay_surf.fill((30, 30, 40, 220))
+        surface.blit(overlay_surf, (100, 100))
+        pygame.draw.rect(surface, (255, 255, 255), overlay, 2)
+
+        font_title = Fonts.Jersey_10(32)
+        font_text = Fonts.Jersey_10(20)
+
+        surface.blit(font_title.render("EXPRESS - INTO THE SNOW", True, (255, 255, 255)), (130, 120))
+
+        story_lines = [
+            "You are on a fast train in a freezing storm.",
+            "Goal: go to subengine and fix it.",
+            "1. Workshop: get scrap & resin",
+            "2. Storage: steal igniter & keychip.",
+            "3. Workbench: make gun",
+            "4. Furnace: stay warm",
+            "5. Engine: fix the subengine",
+            "   [Press SPACE to Start]"
+        ]
+        y = 170
+        for line in story_lines:
+            surface.blit(font_text.render(line, True, (150, 255, 150) if "SPACE" in line else (220, 220, 220)), (130, y))
+            y += 30
