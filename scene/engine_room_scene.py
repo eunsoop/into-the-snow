@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 
-from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector
+from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector, TrainShakeEffector
 from entity import Entity
 from entity.enemy import Boss
 from entity.projectile import Bullet
@@ -56,6 +56,8 @@ class EngineRoomGameLayer(GameLayer):
         self.engine_repaired = False
         self.detachment_timer = 30.0
         self.boss_hp = 100
+        
+        self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=5.0, jolt_intensity=2.0, jolt_duration=0.4))
 
     def on_enter(self):
         game = self.get_game()
@@ -91,7 +93,7 @@ class EngineRoomGameLayer(GameLayer):
         super().event(event)
         
         if event.type == KEYDOWN and event.key == K_SPACE:
-            if self.player.has_stun_gun:
+            if self.player.has_item("stun_gun"):
                 b = Bullet(self.player.x + 24, self.player.y, 1.0, 0.0, is_enemy=False)
                 b.speed = 350
                 self.add_entity(b)
@@ -100,13 +102,13 @@ class EngineRoomGameLayer(GameLayer):
         if event.type == KEYDOWN and event.key == K_e:
             if self.player.rect.colliderect(self.engine.rect):
                 if not self.engine_repaired:
-                    if (self.player.frozen_scrap >= 3 and 
-                        self.player.alpine_resin >= 2 and 
-                        self.player.has_igniter and 
-                        self.player.has_keychip):
+                    if (self.player.get_item_count("frozen_scrap") >= 3 and 
+                        self.player.get_item_count("alpine_resin") >= 2 and 
+                        self.player.has_item("igniter") and 
+                        self.player.has_item("keychip")):
                         
-                        self.player.frozen_scrap -= 3
-                        self.player.alpine_resin -= 2
+                        self.player.remove_item("frozen_scrap", 3)
+                        self.player.remove_item("alpine_resin", 2)
                         self.engine_repaired = True
                         self.detachment_timer = 30.0
                         

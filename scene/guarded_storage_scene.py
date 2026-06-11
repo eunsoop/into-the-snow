@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 
-from core import LayeredScene, GameLayer, Fonts, ShakeEffector
+from core import LayeredScene, GameLayer, Fonts, ShakeEffector, TrainShakeEffector
 from entity import Entity
 from entity.enemy import Guard
 from entity.projectile import Bullet
@@ -61,6 +61,8 @@ class GuardedStorageGameLayer(GameLayer):
         self.keychip = StolenPart(2500, 400, "keychip")
         self.add_entity(self.igniter)
         self.add_entity(self.keychip)
+        
+        self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=6.0, jolt_intensity=2.0, jolt_duration=0.4))
 
     def on_enter(self):
         game = self.get_game()
@@ -72,9 +74,9 @@ class GuardedStorageGameLayer(GameLayer):
             self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
 
-        if self.player.has_igniter and self.igniter in self.entities:
+        if self.player.has_item("igniter") and self.igniter in self.entities:
             self.remove_entity(self.igniter)
-        if self.player.has_keychip and self.keychip in self.entities:
+        if self.player.has_item("keychip") and self.keychip in self.entities:
             self.remove_entity(self.keychip)
 
     def reset(self):
@@ -108,7 +110,7 @@ class GuardedStorageGameLayer(GameLayer):
         super().event(event)
         
         if event.type == KEYDOWN and event.key == K_SPACE:
-            if self.player.has_stun_gun:
+            if self.player.has_item("stun_gun"):
                 b = Bullet(self.player.x + 24, self.player.y, 1.0, 0.0, is_enemy=False)
                 b.speed = 350
                 self.add_entity(b)
@@ -128,9 +130,9 @@ class GuardedStorageGameLayer(GameLayer):
             if isinstance(e, StolenPart):
                 if self.player.rect.colliderect(e.rect):
                     if e.part_type == "igniter":
-                        self.player.has_igniter = True
+                        self.player.add_item("igniter")
                     elif e.part_type == "keychip":
-                        self.player.has_keychip = True
+                        self.player.add_item("keychip")
                     self.remove_entity(e)
 
         bullets = [e for e in self.entities if isinstance(e, Bullet)]
@@ -161,10 +163,10 @@ class GuardedStorageGameLayer(GameLayer):
             f"CamX: {int(self.tilemap.viewpoint.x)} CamY: {int(self.tilemap.viewpoint.y)}",
             f"HP: {int(self.player.health)}",
             f"Temp: {int(self.player.temperature)}",
-            f"Scrap: {self.player.frozen_scrap}",
-            f"Resin: {self.player.alpine_resin}",
-            f"Igniter: {self.player.has_igniter}",
-            f"Keychip: {self.player.has_keychip}"
+            f"Scrap: {self.player.get_item_count('frozen_scrap')}",
+            f"Resin: {self.player.get_item_count('alpine_resin')}",
+            f"Igniter: {self.player.has_item('igniter')}",
+            f"Keychip: {self.player.has_item('keychip')}"
         ]
         
         y_offset = 20

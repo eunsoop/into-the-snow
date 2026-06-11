@@ -3,7 +3,7 @@ import random
 import pygame
 from pygame.locals import *
 
-from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector
+from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector, TrainShakeEffector
 from entity.stationary import CraftingTable, Furnace, Hatch
 from tilemap import TiledImage, Tilemap, Viewpoint
 
@@ -11,35 +11,18 @@ from tilemap import TiledImage, Tilemap, Viewpoint
 class TailWorkshopGameLayer(GameLayer):
     def __init__(self):
         super().__init__()
-        
-        tiles_surf = pygame.Surface((64, 32))
-        pygame.draw.rect(tiles_surf, (50, 50, 60), (0, 0, 32, 32))
-        pygame.draw.rect(tiles_surf, (30, 30, 40), (0, 0, 32, 32), 2)
-        pygame.draw.rect(tiles_surf, (120, 120, 130), (32, 0, 32, 32))
-        pygame.draw.rect(tiles_surf, (100, 100, 110), (32, 0, 32, 32), 1)
-        
-        tiled_image = TiledImage(tiles_surf, tile_size=32)
-        
-        map_data = {}
-        for y in range(22):
-            row = []
-            for x in range(32):
-                is_border = (y == 0 or y == 21)
-                tile_type = 0 if is_border else 1
-                passable = (lambda: False) if is_border else (lambda: True)
-                row.append((tile_type, passable))
-            map_data[y] = row
-            
-        viewpoint = Viewpoint(0, 0, 3.0)
-        self.tilemap = Tilemap(tiled_image, map_data, viewpoint)
-        
+
+        self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
+
         self.furnace = Furnace(200, 150)
         self.crafting_table = CraftingTable(900, 150)
         self.hatch = Hatch(1500, 400)
         
-        self.tilemap.add_stationary(self.furnace)
-        self.tilemap.add_stationary(self.crafting_table)
-        self.tilemap.add_stationary(self.hatch)
+        # self.tilemap.add_stationary(self.furnace)
+        # self.tilemap.add_stationary(self.crafting_table)
+        # self.tilemap.add_stationary(self.hatch)
+
+        self.add_effector(ShakeEffector(duration=0.1, intensity=10.0))
         
         self.player = None
 
@@ -51,6 +34,24 @@ class TailWorkshopGameLayer(GameLayer):
         self.hook_rect = pygame.Rect(500, 100, 20, 20)
         self.hook_state = "IDLE"
         self.hook_speed = 380
+        
+        self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=4.0, jolt_intensity=2.0, jolt_duration=0.4))
+
+    def draw_door(self, map_data: dict, x, y):
+        for dy, oy in enumerate(range(2, 5)):
+            for dx, ox in enumerate(range(2, 6)):
+                map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
+
+    def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
+        tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png")
+        tiled_image = TiledImage(tiles_surf, tile_size=8)
+
+        map_data = {}
+        for y in range(0, 4): map_data[y] = [(4, (lambda: False)) for _ in range(30)]
+        self.draw_door(map_data, 2, 1)
+        self.draw_door(map_data, 24, 1)
+        for y in range(4, 12): map_data[y] = [(2, (lambda: True)) for _ in range(30)]
+        return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
         game = self.get_game()
@@ -88,16 +89,16 @@ class TailWorkshopGameLayer(GameLayer):
         
         if event.type == KEYDOWN and event.key == K_e:
             if self.player.rect.colliderect(self.furnace.rect):
-                if self.player.frozen_scrap > 0:
-                    self.player.frozen_scrap -= 1
+                if self.player.get_item_count("frozen_scrap") > 0:
+                    self.player.remove_item("frozen_scrap", 1)
                     self.player.temperature = 100.0
             
             if self.player.rect.colliderect(self.crafting_table.rect):
-                if not self.player.has_stun_gun:
-                    if self.player.frozen_scrap >= 1 and self.player.alpine_resin >= 1:
-                        self.player.has_stun_gun = True
-                        self.player.frozen_scrap -= 1
-                        self.player.alpine_resin -= 1
+                if not self.player.has_item("stun_gun"):
+                    if self.player.get_item_count("frozen_scrap") >= 1 and self.player.get_item_count("alpine_resin") >= 1:
+                        self.player.add_item("stun_gun")
+                        self.player.remove_item("frozen_scrap", 1)
+                        self.player.remove_item("alpine_resin", 1)
 
     def start_scavenge(self):
         self.state = "SCAVENGE"
@@ -115,7 +116,7 @@ class TailWorkshopGameLayer(GameLayer):
 
     def update(self):
         dt = self.get_game().get_dt()
-        
+
         if self.state == "SCAVENGE":
             self.scavenge_timer -= dt
             self.player.temperature -= 3.0 * dt
@@ -168,9 +169,9 @@ class TailWorkshopGameLayer(GameLayer):
                             self.scavenge_items.remove(item)
                         else:
                             if item["type"] == "scrap":
-                                self.player.frozen_scrap += 1
+                                self.player.add_item("frozen_scrap")
                             elif item["type"] == "resin":
-                                self.player.alpine_resin += 1
+                                self.player.add_item("alpine_resin")
                             self.hook_state = "RETRACT"
                             self.scavenge_items.remove(item)
                         break
@@ -216,8 +217,8 @@ class TailWorkshopGameLayer(GameLayer):
                 f"Time: {int(self.scavenge_timer)}",
                 f"HP: {int(self.player.health)}",
                 f"Temp: {int(self.player.temperature)}",
-                f"Scrap: {self.player.frozen_scrap}",
-                f"Resin: {self.player.alpine_resin}"
+                f"Scrap: {self.player.get_item_count('frozen_scrap')}",
+                f"Resin: {self.player.get_item_count('alpine_resin')}"
             ]
             y_offset = 20
             for line in lines:
@@ -234,11 +235,11 @@ class TailWorkshopGameLayer(GameLayer):
             f"CamX: {int(self.tilemap.viewpoint.x)} CamY: {int(self.tilemap.viewpoint.y)}",
             f"HP: {int(self.player.health)}",
             f"Temp: {int(self.player.temperature)}",
-            f"Scrap: {self.player.frozen_scrap}",
-            f"Resin: {self.player.alpine_resin}",
-            f"Gun: {self.player.has_stun_gun}",
-            f"Igniter: {self.player.has_igniter}",
-            f"Keychip: {self.player.has_keychip}"
+            f"Scrap: {self.player.get_item_count('frozen_scrap')}",
+            f"Resin: {self.player.get_item_count('alpine_resin')}",
+            f"Gun: {self.player.has_item('stun_gun')}",
+            f"Igniter: {self.player.has_item('igniter')}",
+            f"Keychip: {self.player.has_item('keychip')}"
         ]
         
         y_offset = 20

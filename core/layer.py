@@ -64,6 +64,43 @@ class FlashEffector(Effector):
         return self.elapsed >= self.duration
 
 
+class TrainShakeEffector(Effector):
+    def __init__(self, base_intensity: float = 0.5, jolt_frequency: float = 4.0, jolt_intensity: float = 2.0, jolt_duration: float = 0.4):
+        self.base_intensity = base_intensity
+        self.jolt_frequency = jolt_frequency
+        self.jolt_intensity = jolt_intensity
+        self.jolt_duration = jolt_duration
+        self.jolt_timer = random.uniform(0.0, jolt_frequency)
+        self.current_jolt_elapsed = 0.0
+        self.is_jolting = False
+
+    def update(self, dt: float):
+        if self.is_jolting:
+            self.current_jolt_elapsed += dt
+            if self.current_jolt_elapsed >= self.jolt_duration:
+                self.is_jolting = False
+                self.current_jolt_elapsed = 0.0
+                self.jolt_timer = 0.0
+        else:
+            self.jolt_timer += dt
+            if self.jolt_timer >= self.jolt_frequency:
+                self.is_jolting = True
+                self.current_jolt_elapsed = 0.0
+
+    def apply_offset(self) -> tuple[float, float]:
+        intensity = self.base_intensity
+        if self.is_jolting:
+            ratio = 1.0 - (self.current_jolt_elapsed / self.jolt_duration)
+            intensity += self.jolt_intensity * ratio
+        
+        dx = random.uniform(-intensity, intensity)
+        dy = random.uniform(-intensity, intensity)
+        return (dx, dy)
+
+    def is_finished(self) -> bool:
+        return False
+
+
 class Layer(ABC):
     def __init__(self):
         self.game = None
@@ -128,7 +165,7 @@ class GameLayer(Layer):
                 view_y = height / 2 - player.y
 
                 ts = self.tilemap.tile.tile_size * self.tilemap.viewpoint.z
-                map_width = len(self.tilemap.map_data[0]) * ts if self.tilemap.map_data else 0
+                map_width = len(self.tilemap.map_data[next(iter(self.tilemap.map_data))]) * ts if self.tilemap.map_data else 0
                 map_height = len(self.tilemap.map_data) * ts
 
                 min_x = width - map_width

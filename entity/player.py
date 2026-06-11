@@ -12,15 +12,26 @@ class Player(Entity):
         self.speed = 150
         self.temperature = 100.0
         self.health = 100.0
-        self.frozen_scrap = 0
-        self.alpine_resin = 0
-        self.has_igniter = False
-        self.has_keychip = False
-        self.has_stun_gun = False
+        self.inventory = {}
         self.transition_x = None
         self.spotted_shake = False
         self.rect = pygame.Rect(0, 0, self.width, self.height)
         self.rect.center = (int(self.x), int(self.y))
+
+    def add_item(self, item: str, amount: int = 1):
+        self.inventory[item] = self.inventory.get(item, 0) + amount
+
+    def remove_item(self, item: str, amount: int = 1) -> bool:
+        if self.get_item_count(item) >= amount:
+            self.inventory[item] -= amount
+            return True
+        return False
+
+    def get_item_count(self, item: str) -> int:
+        return self.inventory.get(item, 0)
+
+    def has_item(self, item: str) -> bool:
+        return self.get_item_count(item) > 0
 
     def pop_transition_x(self) -> float | None:
         val = self.transition_x
