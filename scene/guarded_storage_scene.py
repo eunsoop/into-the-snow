@@ -25,26 +25,7 @@ class GuardedStorageGameLayer(GameLayer):
     def __init__(self):
         super().__init__()
         
-        tiles_surf = pygame.Surface((64, 32))
-        pygame.draw.rect(tiles_surf, (40, 45, 40), (0, 0, 32, 32))
-        pygame.draw.rect(tiles_surf, (20, 25, 20), (0, 0, 32, 32), 2)
-        pygame.draw.rect(tiles_surf, (110, 100, 90), (32, 0, 32, 32))
-        pygame.draw.rect(tiles_surf, (90, 80, 70), (32, 0, 32, 32), 1)
-        
-        tiled_image = TiledImage(tiles_surf, tile_size=32)
-        
-        map_data = {}
-        for y in range(22):
-            row = []
-            for x in range(32):
-                is_border = (x == 31 or y == 0 or y == 21)
-                tile_type = 0 if is_border else 1
-                passable = (lambda: False) if is_border else (lambda: True)
-                row.append((tile_type, passable))
-            map_data[y] = row
-            
-        viewpoint = Viewpoint(0, 0, 3.0)
-        self.tilemap = Tilemap(tiled_image, map_data, viewpoint)
+        self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
         
         self.player = None
         
@@ -63,6 +44,22 @@ class GuardedStorageGameLayer(GameLayer):
         self.add_entity(self.keychip)
         
         self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=6.0, jolt_intensity=2.0, jolt_duration=0.4))
+
+    def draw_door(self, map_data: dict, x, y):
+        for dy, oy in enumerate(range(2, 5)):
+            for dx, ox in enumerate(range(2, 6)):
+                map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
+
+    def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
+        tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png")
+        tiled_image = TiledImage(tiles_surf, tile_size=8)
+
+        map_data = {}
+        for y in range(0, 4): map_data[y] = [(4, (lambda: False)) for _ in range(80)]
+        self.draw_door(map_data, 2, 1)
+        self.draw_door(map_data, 74, 1)
+        for y in range(4, 12): map_data[y] = [(2, (lambda: True)) for _ in range(80)]
+        return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
         game = self.get_game()

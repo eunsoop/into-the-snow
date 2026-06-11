@@ -47,10 +47,10 @@ class TailWorkshopGameLayer(GameLayer):
         tiled_image = TiledImage(tiles_surf, tile_size=8)
 
         map_data = {}
-        for y in range(0, 4): map_data[y] = [(4, (lambda: False)) for _ in range(30)]
+        for y in range(0, 4): map_data[y] = [(4, (lambda: False)) for _ in range(80)]
         self.draw_door(map_data, 2, 1)
-        self.draw_door(map_data, 24, 1)
-        for y in range(4, 12): map_data[y] = [(2, (lambda: True)) for _ in range(30)]
+        self.draw_door(map_data, 74, 1)
+        for y in range(4, 12): map_data[y] = [(2, (lambda: True)) for _ in range(80)]
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
