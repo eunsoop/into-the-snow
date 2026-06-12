@@ -21,10 +21,8 @@ class Game:
         self.is_running = True
         self.clock = pygame.time.Clock()
         self.dt = 0
-
         self.scenes = {}
         self.current_scene = None
-
         self.player = Player(150, 300)
 
     def reset_player_data(self):
@@ -54,14 +52,11 @@ class Game:
 
     def loop(self):
         self.dt = self.clock.tick(60) / 1000.0
-
         self.surface.fill((0, 0, 0))
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.quit()
             self.event(event)
-
         if self.current_scene:
             self.current_scene.paint(self.surface)
         pygame.display.flip()
@@ -85,6 +80,5 @@ if __name__ == "__main__":
     game.register_scene("ingame.detachment", DetachmentScene())
     game.register_scene("gameover", GameOverScene())
     game.register_scene("gamewin", GameWinScene())
-    
     game.set_scene("menu")
     game.run()

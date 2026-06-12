@@ -1,46 +1,25 @@
-import math
 import pygame
 from pygame.locals import *
 
 from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector, TrainShakeEffector
-from entity import Entity
-from entity.enemy import Boss
-from entity.projectile import Bullet
-from tilemap import TiledImage, Tilemap, Viewpoint
 from entity.collectible import CollectibleItem
-
-
-class BrokenEngineCore(Entity):
-    def __init__(self, x: float, y: float):
-        super().__init__(x, y)
-        self.is_solid = True
-        self.rect = pygame.Rect(0, 0, 96, 128)
-        self.rect.center = (int(self.x), int(self.y))
-
-    def paint(self, surface: pygame.Surface):
-        color = (50, 50, 50)
-        border_color = (255, 50, 50)
-        pygame.draw.rect(surface, color, self.rect)
-        pygame.draw.rect(surface, border_color, self.rect, 3)
-        pygame.draw.circle(surface, (150, 50, 50), self.rect.center, 16)
+from entity.stationary import BrokenEngineCore
+from tilemap import TiledImage, Tilemap, Viewpoint
+from ui.hud import fire_weapon_at_mouse, paint_debug_lines
 
 
 class EngineRoomGameLayer(GameLayer):
     def __init__(self):
         super().__init__()
-
         self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
-
         self.engine = BrokenEngineCore(200, 300)
         self.tilemap.add_stationary(self.engine)
-
         self.player = None
         self.engine_repaired = False
         self.engine_scrap = 0
         self.engine_resin = 0
         self.engine_igniter = False
         self.engine_keychip = False
-
         self.fire_cooldown_timer = 0.15
         self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=5.0, jolt_intensity=2.0, jolt_duration=0.4))
         self.spawn_collectibles()
@@ -55,33 +34,31 @@ class EngineRoomGameLayer(GameLayer):
         self.add_entity(CollectibleItem(800, 300, "coal"))
         self.add_entity(CollectibleItem(1500, 430, "coal"))
 
-    def draw_door(self, map_data: dict, x, y):
+    def draw_door(self, map_data, x, y):
         for dy, oy in enumerate(range(2, 5)):
             for dx, ox in enumerate(range(2, 6)):
-                map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
+                map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
-
         map_data = {}
-        for y in range(0, 4): map_data[y] = [(4, (lambda: False)) for _ in range(80)]
+        for y in range(0, 4):
+            map_data[y] = [(4, (lambda: False)) for _ in range(80)]
         self.draw_door(map_data, 2, 1)
         self.draw_door(map_data, 74, 1)
-        for y in range(4, 12): map_data[y] = [(2, (lambda: True)) for _ in range(80)]
+        for y in range(4, 12):
+            map_data[y] = [(2, (lambda: True)) for _ in range(80)]
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
         game = self.get_game()
         self.player = game.player
         self.add_entity(self.player)
-
         tx = self.player.pop_transition_x()
         if tx is not None:
             self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
-
-
 
     def reset(self):
         if self.player and self.player in self.entities:
@@ -96,7 +73,6 @@ class EngineRoomGameLayer(GameLayer):
 
     def event(self, event):
         super().event(event)
-
         if event.type == KEYDOWN and event.key == K_f:
             if self.player.rect.inflate(40, 40).colliderect(self.engine.rect):
                 if not self.engine_repaired:
@@ -118,7 +94,6 @@ class EngineRoomGameLayer(GameLayer):
                         self.engine_keychip = True
                         self.add_effector(ShakeEffector(duration=0.15, intensity=4.0))
                         self.add_effector(FlashEffector(duration=0.1, color=(255, 255, 255), max_alpha=100))
-
                     if self.engine_scrap >= 3 and self.engine_resin >= 2 and self.engine_igniter and self.engine_keychip:
                         self.engine_repaired = True
                         self.player.transition_x = 100
@@ -128,46 +103,21 @@ class EngineRoomGameLayer(GameLayer):
     def update(self):
         super().update()
         dt = self.game.get_dt()
-
         if self.player.has_item("ak47"):
-            self.fire_cooldown_timer = max(0.0, self.fire_cooldown_timer - dt)
-            mouse_buttons = pygame.mouse.get_pressed()
-            if mouse_buttons[0] and self.fire_cooldown_timer <= 0.0:
-                self.fire_cooldown_timer = 0.12
-                mx, my = pygame.mouse.get_pos()
-                vp = self.tilemap.viewpoint
-                wx = mx - vp.x
-                wy = my - vp.y
-                dx = wx - self.player.x
-                dy = wy - self.player.y
-                dist = math.hypot(dx, dy)
-                if dist > 0:
-                    dx /= dist
-                    dy /= dist
-                else:
-                    dx, dy = self.player.facing
-                b = Bullet(self.player.x + dx * 16, self.player.y + dy * 16, dx, dy, is_enemy=False)
-                b.speed = 500
-                self.add_entity(b)
-                self.add_effector(ShakeEffector(duration=0.10, intensity=2.5))
-
+            fire_weapon_at_mouse(self, dt)
         for e in self.entities[:]:
             if isinstance(e, CollectibleItem):
                 if self.player.rect.colliderect(e.rect):
                     self.player.add_item(e.item_type, 1)
                     self.remove_entity(e)
-
         if self.player.x > 2900:
             self.player.transition_x = 100
             self.remove_entity(self.player)
             self.game.set_scene("ingame.detachment")
             return
 
-
-
     def paint(self, surface: pygame.Surface):
         super().paint(surface)
-
         if not self.engine_repaired and self.player.rect.inflate(40, 40).colliderect(self.engine.rect):
             prompt_font = Fonts.Jersey_10(24)
             can_insert = (
@@ -183,15 +133,11 @@ class EngineRoomGameLayer(GameLayer):
                 text += "    [F] Insert Component"
             else:
                 text += "    (Need parts)"
-
             prompt = prompt_font.render(text, True, (255, 255, 255))
             viewpoint = self.tilemap.viewpoint
             px = self.engine.rect.centerx + viewpoint.x - prompt.get_width() // 2
             py = self.engine.rect.y + viewpoint.y - 30
             surface.blit(prompt, (px, py))
-
-        font = Fonts.Jersey_10(20)
-
         lines = [
             f"X: {int(self.player.x)} Y: {int(self.player.y)}",
             f"CamX: {int(self.tilemap.viewpoint.x)} CamY: {int(self.tilemap.viewpoint.y)}",
@@ -204,12 +150,7 @@ class EngineRoomGameLayer(GameLayer):
             f"Medkit: {self.player.get_item_count('medkit')}",
             f"Thermopack: {self.player.get_item_count('thermopack')}"
         ]
-
-        y_offset = 20
-        for line in lines:
-            if line:
-                surface.blit(font.render(line, True, (255, 255, 255)), (20, y_offset))
-                y_offset += 22
+        paint_debug_lines(surface, lines)
 
 
 class EngineRoomScene(LayeredScene):

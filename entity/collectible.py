@@ -1,5 +1,6 @@
 import pygame
-from entity import Entity
+
+from entity.base import Entity
 
 
 class CollectibleItem(Entity):
@@ -19,6 +20,18 @@ class CollectibleItem(Entity):
         else:
             color = (180, 120, 50)
             border_color = (240, 190, 100)
-
         pygame.draw.rect(surface, color, self.rect, border_radius=4)
         pygame.draw.rect(surface, border_color, self.rect, width=2, border_radius=4)
+
+
+class StolenPart(Entity):
+    def __init__(self, x: float, y: float, part_type: str):
+        super().__init__(x, y)
+        self.part_type = part_type
+        self.rect = pygame.Rect(0, 0, 24, 24)
+        self.rect.center = (int(self.x), int(self.y))
+
+    def paint(self, surface: pygame.Surface):
+        color = (255, 165, 0) if self.part_type == "igniter" else (0, 255, 255)
+        pygame.draw.rect(surface, color, self.rect)
+        pygame.draw.rect(surface, (255, 255, 255), self.rect, 2)

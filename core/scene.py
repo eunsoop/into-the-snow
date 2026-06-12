@@ -1,6 +1,7 @@
-import pygame
 from abc import abstractmethod, ABC
 from typing import final
+
+import pygame
 from pygame import Surface
 
 

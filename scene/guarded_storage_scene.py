@@ -1,36 +1,19 @@
-import math
 import pygame
 from pygame.locals import *
 
-from core import LayeredScene, GameLayer, Fonts, ShakeEffector, TrainShakeEffector
-from entity import Entity
+from core import LayeredScene, GameLayer, ShakeEffector, TrainShakeEffector
+from entity.collectible import CollectibleItem, StolenPart
 from entity.enemy import Guard
 from entity.projectile import Bullet
 from tilemap import TiledImage, Tilemap, Viewpoint
-from entity.collectible import CollectibleItem
-
-
-class StolenPart(Entity):
-    def __init__(self, x: float, y: float, part_type: str):
-        super().__init__(x, y)
-        self.part_type = part_type
-        self.rect = pygame.Rect(0, 0, 24, 24)
-        self.rect.center = (int(self.x), int(self.y))
-
-    def paint(self, surface: pygame.Surface):
-        color = (255, 165, 0) if self.part_type == "igniter" else (0, 255, 255)
-        pygame.draw.rect(surface, color, self.rect)
-        pygame.draw.rect(surface, (255, 255, 255), self.rect, 2)
+from ui.hud import fire_weapon_at_mouse, paint_debug_lines
 
 
 class GuardedStorageGameLayer(GameLayer):
     def __init__(self):
         super().__init__()
-
         self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
-
         self.player = None
-
         self.guards = [
             Guard(500, 200, 300, 800),
             Guard(500, 300, 300, 900),
@@ -39,12 +22,10 @@ class GuardedStorageGameLayer(GameLayer):
         ]
         for g in self.guards:
             self.add_entity(g)
-
         self.igniter = StolenPart(1200, 200, "igniter")
         self.keychip = StolenPart(2500, 400, "keychip")
         self.add_entity(self.igniter)
         self.add_entity(self.keychip)
-
         self.fire_cooldown_timer = 0.15
         self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=6.0, jolt_intensity=2.0, jolt_duration=0.4))
         self.spawn_collectibles()
@@ -59,44 +40,45 @@ class GuardedStorageGameLayer(GameLayer):
         self.add_entity(CollectibleItem(700, 250, "coal"))
         self.add_entity(CollectibleItem(1900, 430, "coal"))
 
-    def draw_door(self, map_data: dict, x, y):
+    def draw_door(self, map_data, x, y):
         for dy, oy in enumerate(range(2, 5)):
             for dx, ox in enumerate(range(2, 6)):
-                map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
+                map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
-    def draw_chair(self, map_data: dict, x, y):
+    def draw_chair(self, map_data, x, y):
         for dy, oy in enumerate(range(2, 7)):
             for dx, ox in enumerate(range(0, 2)):
-                map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
+                map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
-    def draw_window(self, map_data: dict, x, y):
+    def draw_window(self, map_data, x, y):
         for dy, oy in enumerate(range(5, 7)):
             for dx, ox in enumerate(range(2, 6)):
-                map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
+                map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
-
         map_data = {}
-        for y in range(0, 4): map_data[y] = [(4, (lambda: False)) for _ in range(56)]
+        for y in range(0, 4):
+            map_data[y] = [(4, (lambda: False)) for _ in range(56)]
         self.draw_door(map_data, 2, 1)
         self.draw_door(map_data, 49, 1)
-        for i in range(0, 7): self.draw_window(map_data, 7 + i*6, 1)
-        for y in range(4, 12): map_data[y] = [(2, (lambda: True)) for _ in range(56)]
-        for i in range(0, 7): self.draw_chair(map_data, 6 + i*3, 7)
+        for i in range(0, 7):
+            self.draw_window(map_data, 7 + i * 6, 1)
+        for y in range(4, 12):
+            map_data[y] = [(2, (lambda: True)) for _ in range(56)]
+        for i in range(0, 7):
+            self.draw_chair(map_data, 6 + i * 3, 7)
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
         game = self.get_game()
         self.player = game.player
         self.add_entity(self.player)
-
         tx = self.player.pop_transition_x()
         if tx is not None:
             self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
-
         if self.player.has_item("igniter") and self.igniter in self.entities:
             self.remove_entity(self.igniter)
         if self.player.has_item("keychip") and self.keychip in self.entities:
@@ -136,41 +118,18 @@ class GuardedStorageGameLayer(GameLayer):
     def update(self):
         super().update()
         dt = self.get_game().get_dt()
-
         if self.player.has_item("ak47"):
-            self.fire_cooldown_timer = max(0.0, self.fire_cooldown_timer - dt)
-            mouse_buttons = pygame.mouse.get_pressed()
-            if mouse_buttons[0] and self.fire_cooldown_timer <= 0.0:
-                self.fire_cooldown_timer = 0.12
-                mx, my = pygame.mouse.get_pos()
-                vp = self.tilemap.viewpoint
-                wx = mx - vp.x
-                wy = my - vp.y
-                dx = wx - self.player.x
-                dy = wy - self.player.y
-                dist = math.hypot(dx, dy)
-                if dist > 0:
-                    dx /= dist
-                    dy /= dist
-                else:
-                    dx, dy = self.player.facing
-                b = Bullet(self.player.x + dx * 16, self.player.y + dy * 16, dx, dy, is_enemy=False)
-                b.speed = 500
-                self.add_entity(b)
-                self.add_effector(ShakeEffector(duration=0.10, intensity=2.5))
-
+            fire_weapon_at_mouse(self, dt)
         for e in self.entities[:]:
             if isinstance(e, CollectibleItem):
                 if self.player.rect.colliderect(e.rect):
                     self.player.add_item(e.item_type, 1)
                     self.remove_entity(e)
-
         if self.player.x < 15:
             self.player.transition_x = 2000
             self.remove_entity(self.player)
             self.game.set_scene("ingame.tailworkshop")
             return
-
         for e in self.entities[:]:
             if isinstance(e, StolenPart):
                 if self.player.rect.colliderect(e.rect):
@@ -179,7 +138,6 @@ class GuardedStorageGameLayer(GameLayer):
                     elif e.part_type == "keychip":
                         self.player.add_item("keychip")
                     self.remove_entity(e)
-
         bullets = [e for e in self.entities if isinstance(e, Bullet)]
         for b in bullets:
             for g in self.guards:
@@ -189,7 +147,6 @@ class GuardedStorageGameLayer(GameLayer):
                     if b in self.entities:
                         self.remove_entity(b)
                     break
-
         for g in self.guards:
             if not g.is_stunned and self.player.rect.colliderect(g.los_rect):
                 self.player.health = max(10.0, self.player.health - 20.0)
@@ -201,8 +158,6 @@ class GuardedStorageGameLayer(GameLayer):
 
     def paint(self, surface: pygame.Surface):
         super().paint(surface)
-
-        font = Fonts.Jersey_10(20)
         lines = [
             f"X: {int(self.player.x)} Y: {int(self.player.y)}",
             f"CamX: {int(self.tilemap.viewpoint.x)} CamY: {int(self.tilemap.viewpoint.y)}",
@@ -216,12 +171,7 @@ class GuardedStorageGameLayer(GameLayer):
             f"Medkit: {self.player.get_item_count('medkit')}",
             f"Thermopack: {self.player.get_item_count('thermopack')}"
         ]
-
-        y_offset = 20
-        for line in lines:
-            if line:
-                surface.blit(font.render(line, True, (255, 255, 255)), (20, y_offset))
-                y_offset += 22
+        paint_debug_lines(surface, lines)
 
 
 class GuardedStorageScene(LayeredScene):

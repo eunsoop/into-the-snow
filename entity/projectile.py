@@ -1,6 +1,6 @@
 import pygame
 
-from entity import Entity
+from entity.base import Entity
 
 
 class Bullet(Entity):
@@ -25,7 +25,7 @@ class Bullet(Entity):
                 py = self.y - self.rect.height // 2
                 if self.layer.tilemap.check_collision(px, py, self.rect.width, self.rect.height):
                     self.layer.remove_entity(self)
-                    
+
             if self.x < -100 or self.x > 3200 or self.y < -100 or self.y > 800:
                 if self in self.layer.entities:
                     self.layer.remove_entity(self)

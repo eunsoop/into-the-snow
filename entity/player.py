@@ -1,8 +1,9 @@
 import math
+
 import pygame
 from pygame.locals import *
 
-from entity import Entity
+from entity.base import Entity
 
 
 class Player(Entity):

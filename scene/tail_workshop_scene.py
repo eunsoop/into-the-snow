@@ -1,35 +1,25 @@
-import math
-import random
-
 import pygame
 from pygame.locals import *
 
 from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector, TrainShakeEffector
+from entity.collectible import CollectibleItem
 from entity.stationary import CraftingTable, Furnace
 from tilemap import TiledImage, Tilemap, Viewpoint
-from entity.collectible import CollectibleItem
-from entity.projectile import Bullet
+from ui.hud import fire_weapon_at_mouse, paint_debug_lines
 
 
 class TailWorkshopGameLayer(GameLayer):
     def __init__(self):
         super().__init__()
-
         self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
-
         self.furnace = Furnace(400, 220)
         self.crafting_table = CraftingTable(1000, 220)
-
         self.tilemap.add_stationary(self.furnace)
         self.tilemap.add_stationary(self.crafting_table)
-
         self.add_effector(ShakeEffector(duration=0.1, intensity=10.0))
-
         self.player = None
-
         self.state = "NORMAL"
         self.fire_cooldown_timer = 0.15
-
         self.add_effector(TrainShakeEffector(base_intensity=0.3, jolt_frequency=2.0, jolt_intensity=2.0, jolt_duration=0.4))
         self.spawn_collectibles()
 
@@ -46,29 +36,28 @@ class TailWorkshopGameLayer(GameLayer):
     def draw_door(self, map_data, x, y):
         for dy, oy in enumerate(range(2, 5)):
             for dx, ox in enumerate(range(2, 6)):
-                map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
+                map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
-
         map_data = {}
-        for y in range(0, 4): map_data[y] = [(4, (lambda: False)) for _ in range(56)]
+        for y in range(0, 4):
+            map_data[y] = [(4, (lambda: False)) for _ in range(56)]
         self.draw_door(map_data, 2, 1)
         self.draw_door(map_data, 49, 1)
-        for y in range(4, 12): map_data[y] = [(2, (lambda: True)) for _ in range(56)]
+        for y in range(4, 12):
+            map_data[y] = [(2, (lambda: True)) for _ in range(56)]
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
         game = self.get_game()
         self.player = game.player
         self.add_entity(self.player)
-
         tx = self.player.pop_transition_x()
         if tx is not None:
             self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
-
         if self.player.pop_spotted_shake():
             self.add_effector(ShakeEffector(duration=0.5, intensity=15.0))
             self.add_effector(FlashEffector(duration=0.25, color=(255, 0, 0), max_alpha=180))
@@ -84,7 +73,6 @@ class TailWorkshopGameLayer(GameLayer):
         if self.state == "CRAFTING":
             self.handle_menu_event(event)
             return
-
         if event.type == KEYDOWN and event.key == K_f:
             furnace_dist = max(abs(self.player.x - self.furnace.x), abs(self.player.y - self.furnace.y))
             crafting_dist = max(abs(self.player.x - self.crafting_table.x), abs(self.player.y - self.crafting_table.y))
@@ -96,7 +84,6 @@ class TailWorkshopGameLayer(GameLayer):
             elif crafting_dist < 60:
                 self.state = "CRAFTING"
             return
-
         super().event(event)
 
     def handle_menu_event(self, event):
@@ -104,10 +91,8 @@ class TailWorkshopGameLayer(GameLayer):
             if event.key in (K_ESCAPE, K_f):
                 self.state = "NORMAL"
                 return
-
         if event.type == MOUSEBUTTONDOWN and event.button == 1:
             mx, my = pygame.mouse.get_pos()
-
             if self.state == "CRAFTING":
                 self.player.add_item("keychip", 1)
                 self.player.add_item("igniter", 1)
@@ -118,7 +103,6 @@ class TailWorkshopGameLayer(GameLayer):
                 r2 = pygame.Rect(container.x + 20, container.y + 195, 410, 75)
                 r3 = pygame.Rect(container.x + 20, container.y + 280, 410, 75)
                 close_rect = pygame.Rect(container.x + 20, container.y + 375, 410, 45)
-
                 if r1.collidepoint(mx, my):
                     if not self.player.has_item("ak47"):
                         if self.player.get_item_count("frozen_scrap") >= 1 and self.player.get_item_count("alpine_resin") >= 1:
@@ -166,22 +150,17 @@ class TailWorkshopGameLayer(GameLayer):
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         overlay.fill((5, 5, 5, 200))
         surface.blit(overlay, (0, 0))
-
         container = pygame.Rect(275, 130, 450, 440)
         pygame.draw.rect(surface, (15, 15, 15), container, border_radius=12)
         pygame.draw.rect(surface, (255, 255, 255), container, width=2, border_radius=12)
-
         font_title = Fonts.Jersey_10(36)
         title_surf = font_title.render("CRAFTING BENCH", True, (255, 255, 255))
         surface.blit(title_surf, (container.x + 20, container.y + 20))
-
         pygame.draw.line(surface, (60, 60, 60), (container.x + 20, container.y + 65), (container.right - 20, container.y + 65), 2)
-
         font_res = Fonts.Jersey_10(20)
         res_str = f"Your Inventory:  Scrap: {self.player.get_item_count('frozen_scrap')}   Resin: {self.player.get_item_count('alpine_resin')}"
         res_surf = font_res.render(res_str, True, (180, 180, 180))
         surface.blit(res_surf, (container.x + 20, container.y + 75))
-
         items = [
             {
                 "name": "AK-47",
@@ -205,31 +184,24 @@ class TailWorkshopGameLayer(GameLayer):
                 "rect": pygame.Rect(container.x + 20, container.y + 280, 410, 75)
             }
         ]
-
         mx, my = pygame.mouse.get_pos()
         font_item = Fonts.Jersey_10(24)
         font_desc = Fonts.Jersey_10(16)
-
         for item in items:
             hovered = item["rect"].collidepoint(mx, my)
             box_color = (40, 40, 40) if hovered else (20, 20, 20)
             border_color = (255, 255, 255) if hovered else (70, 70, 70)
-
             pygame.draw.rect(surface, box_color, item["rect"], border_radius=6)
             pygame.draw.rect(surface, border_color, item["rect"], width=1, border_radius=6)
-
             owned_count = self.player.get_item_count(item["id"])
             if item["id"] == "ak47":
                 owned_str = " (Owned)" if self.player.has_item("ak47") else " (Not Owned)"
             else:
                 owned_str = f" (Qty: {owned_count})"
-
             name_surf = font_item.render(item["name"] + owned_str, True, (255, 255, 255))
             desc_surf = font_desc.render(item["desc"], True, (150, 150, 150))
-
             surface.blit(name_surf, (item["rect"].x + 12, item["rect"].y + 10))
             surface.blit(desc_surf, (item["rect"].x + 12, item["rect"].y + 38))
-
             cost_x = item["rect"].right - 140
             cost_y = item["rect"].y + 15
             for mat, amount in item["cost"].items():
@@ -241,56 +213,29 @@ class TailWorkshopGameLayer(GameLayer):
                 cost_surf = font_desc.render(cost_text, True, color)
                 surface.blit(cost_surf, (cost_x, cost_y))
                 cost_y += 18
-
         close_rect = pygame.Rect(container.x + 20, container.y + 375, 410, 45)
         hovered_close = close_rect.collidepoint(mx, my)
         close_bg = (60, 60, 60) if hovered_close else (30, 30, 30)
         pygame.draw.rect(surface, close_bg, close_rect, border_radius=6)
         pygame.draw.rect(surface, (255, 255, 255), close_rect, width=1, border_radius=6)
-
         font_btn = Fonts.Jersey_10(24)
         btn_text = font_btn.render("CLOSE [ESC]", True, (255, 255, 255))
         bx = close_rect.centerx - btn_text.get_width() // 2
         by = close_rect.centery - btn_text.get_height() // 2
         surface.blit(btn_text, (bx, by))
 
-
     def update(self):
         super().update()
-
         dt = self.get_game().get_dt()
-
         if self.state == "NORMAL" and self.player and self.player.has_item("ak47"):
-            self.fire_cooldown_timer = max(0.0, self.fire_cooldown_timer - dt)
-            mouse_buttons = pygame.mouse.get_pressed()
-            if mouse_buttons[0] and self.fire_cooldown_timer <= 0.0:
-                self.fire_cooldown_timer = 0.12
-                mx, my = pygame.mouse.get_pos()
-                vp = self.tilemap.viewpoint
-                wx = mx - vp.x
-                wy = my - vp.y
-                dx = wx - self.player.x
-                dy = wy - self.player.y
-                dist = math.hypot(dx, dy)
-                if dist > 0:
-                    dx /= dist
-                    dy /= dist
-                else:
-                    dx, dy = self.player.facing
-                b = Bullet(self.player.x + dx * 16, self.player.y + dy * 16, dx, dy, is_enemy=False)
-                b.speed = 500
-                self.add_entity(b)
-                self.add_effector(ShakeEffector(duration=0.10, intensity=2.5))
-
+            fire_weapon_at_mouse(self, dt)
         if hasattr(self, "furnace") and self.furnace:
             self.furnace.fuel = max(0.0, self.furnace.fuel - 2.5 * dt)
-
         for e in self.entities[:]:
             if isinstance(e, CollectibleItem):
                 if self.player.rect.colliderect(e.rect):
                     self.player.add_item(e.item_type, 1)
                     self.remove_entity(e)
-
         if self.player.x < 15:
             self.player.transition_x = 900
             self.remove_entity(self.player)
@@ -304,13 +249,10 @@ class TailWorkshopGameLayer(GameLayer):
 
     def paint(self, surface: pygame.Surface):
         super().paint(surface)
-
         if self.state == "CRAFTING":
             self.paint_crafting_ui(surface)
         else:
             self.paint_hud(surface)
-
-        font = Fonts.Jersey_10(20)
         lines = [
             f"X: {int(self.player.x)} Y: {int(self.player.y)}",
             f"CamX: {int(self.tilemap.viewpoint.x)} CamY: {int(self.tilemap.viewpoint.y)}",
@@ -326,12 +268,7 @@ class TailWorkshopGameLayer(GameLayer):
             f"Medkit: {self.player.get_item_count('medkit')}",
             f"Thermopack: {self.player.get_item_count('thermopack')}"
         ]
-
-        y_offset = 20
-        for line in lines:
-            if line:
-                surface.blit(font.render(line, True, (255, 255, 255)), (20, y_offset))
-                y_offset += 22
+        paint_debug_lines(surface, lines)
 
 
 class TailWorkshopScene(LayeredScene):

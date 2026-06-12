@@ -8,12 +8,12 @@ from ui import Button, Label
 class MenuBackgroundLayer(Layer):
     def __init__(self):
         super().__init__()
-        
+
         def scale_image(path):
             img = pygame.image.load(path)
             scale = max(1000 / img.get_width(), 700 / img.get_height())
             return pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
-        
+
         self.bg = scale_image("assets/images/background/menu/Plan 5.png")
         self.target = scale_image("assets/images/background/menu/Plan 4.png")
         self.fg = [
@@ -21,7 +21,6 @@ class MenuBackgroundLayer(Layer):
             scale_image("assets/images/background/menu/Plan 2.png"),
             scale_image("assets/images/background/menu/Plan 1.png"),
         ]
-
         self.progress = 1
 
     def event(self, event):
@@ -29,12 +28,10 @@ class MenuBackgroundLayer(Layer):
 
     def paint(self, surface: Surface):
         surface.blit(self.bg, (0, 0))
-
         if self.progress < -1:
             self.progress = 2
-        self.progress -= self.get_game().get_dt()*0.1
+        self.progress -= self.get_game().get_dt() * 0.1
         surface.blit(self.target, (int(self.progress * self.target.get_width()), 0))
-
         for fg in self.fg:
             surface.blit(fg, (0, 0))
 
@@ -44,7 +41,6 @@ class MenuScene(LayeredScene):
         super().__init__()
         self.show_settings = False
         self.show_credits = False
-
         self.bg_layer = MenuBackgroundLayer()
         self.ui_layer = UserInterfaceLayer(elements=[
             ((210, 50), 0, Label(
@@ -90,29 +86,23 @@ class MenuScene(LayeredScene):
 
     def paint(self, surface: Surface):
         super().paint(surface)
-
         if self.show_settings:
             panel_rect = Rect(450, 200, 400, 260)
             pygame.draw.rect(surface, (40, 40, 50), panel_rect)
             pygame.draw.rect(surface, (200, 200, 220), panel_rect, 2)
-            
             font_title = Fonts.Jersey_10(28)
             font_text = Fonts.Jersey_10(20)
-            
             surface.blit(font_title.render("Settings", True, (255, 255, 255)), (480, 220))
-            surface.blit(font_text.render("- WASD / Arrows: Move", True, (220, 220, 220)), (480, 270))
-            surface.blit(font_text.render("- E Key: Use", True, (220, 220, 220)), (480, 310))
-            surface.blit(font_text.render("- SPACE Key: Shoot", True, (220, 220, 220)), (480, 350))
-            surface.blit(font_text.render("- Goal: Go to Cockpit", True, (220, 220, 255)), (480, 390))
-
+            surface.blit(font_text.render("- WASD: Move", True, (220, 220, 220)), (480, 270))
+            surface.blit(font_text.render("- F Key: Interact", True, (220, 220, 220)), (480, 310))
+            surface.blit(font_text.render("- Mouse Click: Shoot", True, (220, 220, 220)), (480, 350))
+            surface.blit(font_text.render("- Goal: Fix the Engine", True, (220, 220, 255)), (480, 390))
         elif self.show_credits:
             panel_rect = Rect(450, 200, 400, 260)
             pygame.draw.rect(surface, (40, 40, 50), panel_rect)
             pygame.draw.rect(surface, (200, 200, 220), panel_rect, 2)
-            
             font_title = Fonts.Jersey_10(28)
             font_text = Fonts.Jersey_10(20)
-            
             surface.blit(font_title.render("Credits", True, (255, 255, 255)), (480, 220))
             surface.blit(font_text.render("Express - Into the snow", True, (240, 240, 250)), (480, 270))
             surface.blit(font_text.render("ICS3U Final Project", True, (220, 220, 220)), (480, 310))

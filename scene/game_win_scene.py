@@ -7,7 +7,6 @@ from ui import Button, Label
 class GameWinScene(LayeredScene):
     def __init__(self):
         super().__init__()
-        
         self.ui_layer = UserInterfaceLayer(elements=[
             ((220, 180), 0, Label(
                 text="CORE INSTALLED",

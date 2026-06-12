@@ -1,11 +1,15 @@
-import pygame
 from abc import ABC, abstractmethod
 from typing import final
+
+import pygame
 from pygame import Surface
 from pygame._sdl2 import Image
 
 from core.layer import Layer
-from core.utils import is_mouse_in_rect
+
+
+def is_mouse_in_rect(mouse_pos: tuple[int, int], rect: tuple[int, int, int, int]) -> bool:
+    return rect[0] <= mouse_pos[0] <= rect[0] + rect[2] and rect[1] <= mouse_pos[1] <= rect[1] + rect[3]
 
 
 class Element(ABC):
@@ -77,7 +81,6 @@ class UserInterfaceLayer(Layer):
     def paint(self, surface: Surface):
         for element_data in sorted(self.elements, key=lambda e: e[1]):
             ele = element_data[2]
-
             if isinstance(ele, SizableElement):
                 surface.set_clip((*element_data[0], *ele.get_size()))
             ele.update(surface, element_data[0])

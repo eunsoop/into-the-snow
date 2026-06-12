@@ -1,4 +1,5 @@
 from typing import Callable
+
 import pygame
 from pygame import Surface
 

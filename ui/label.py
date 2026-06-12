@@ -9,7 +9,14 @@ if not pygame.sysfont.is_init:
 
 
 class Label(Element):
-    def __init__(self, text: str, font: Font = sysfont.SysFont("Arial", size=16), color: tuple[int, int, int] = (255, 255, 255), antialias: bool = True, background: tuple[int, int, int] | None = None):
+    def __init__(
+        self,
+        text: str,
+        font: Font = sysfont.SysFont("Arial", size=16),
+        color: tuple[int, int, int] = (255, 255, 255),
+        antialias: bool = True,
+        background: tuple[int, int, int] | None = None,
+    ):
         super().__init__()
         self.text = text
         self.font = font

@@ -7,7 +7,6 @@ from ui import Button, Label
 class GameOverScene(LayeredScene):
     def __init__(self):
         super().__init__()
-        
         self.ui_layer = UserInterfaceLayer(elements=[
             ((280, 180), 0, Label(
                 text="YOU FROZE",

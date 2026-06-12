@@ -7,7 +7,6 @@ from scene.background_layers import WeightedBackgroundLayer, RepeatingImageLayer
 class IntroScene(LayeredScene):
     def __init__(self):
         super().__init__()
-
         self.stage1 = [
             WeightedBackgroundLayer(
                 [
@@ -38,10 +37,9 @@ class IntroScene(LayeredScene):
                 ],
                 scale=2,
                 offset_y=636,
-                offset_x=int(100),
+                offset_x=100,
             )
         ]
-
         self.add_layers(self.stage1)
 
     def event(self, event):
@@ -77,5 +75,6 @@ class IntroScene(LayeredScene):
         ]
         y = 170
         for line in story_lines:
-            surface.blit(font_text.render(line, True, (150, 255, 150) if "SPACE" in line else (220, 220, 220)), (130, y))
+            color = (150, 255, 150) if "SPACE" in line else (220, 220, 220)
+            surface.blit(font_text.render(line, True, color), (130, y))
             y += 30
