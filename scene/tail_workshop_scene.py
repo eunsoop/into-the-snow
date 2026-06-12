@@ -55,6 +55,8 @@ class TailWorkshopGameLayer(GameLayer):
         self.player = game.player
         self.add_entity(self.player)
         tx = self.player.pop_transition_x()
+        ty = self.player.pop_transition_y()
+        if ty is not None: self.player.y = ty
         if tx is not None:
             self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
@@ -238,6 +240,7 @@ class TailWorkshopGameLayer(GameLayer):
                     self.remove_entity(e)
         if self.player.x < 15:
             self.player.transition_x = 900
+            self.player.transition_y = 500
             self.remove_entity(self.player)
             self.game.set_scene("ingame.detachment")
             return
@@ -274,11 +277,11 @@ class TailWorkshopGameLayer(GameLayer):
 class TailWorkshopScene(LayeredScene):
     def __init__(self):
         super().__init__()
-        self.logic_layer = TailWorkshopGameLayer()
-        self.add_layer(self.logic_layer)
+        self.game_layer = TailWorkshopGameLayer()
+        self.add_layer(self.game_layer)
 
     def on_enter(self):
-        self.logic_layer.on_enter()
+        self.game_layer.on_enter()
 
     def reset(self):
-        self.logic_layer.reset()
+        self.game_layer.reset()

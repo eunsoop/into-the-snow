@@ -1,7 +1,6 @@
 import pygame
-from pygame.locals import *
 
-from core import LayeredScene, GameLayer, ShakeEffector, TrainShakeEffector
+from core import LayeredScene, GameLayer, TrainShakeEffector
 from entity.collectible import CollectibleItem, StolenPart
 from entity.enemy import Guard
 from entity.projectile import Bullet
@@ -76,6 +75,8 @@ class GuardedStorageGameLayer(GameLayer):
         self.player = game.player
         self.add_entity(self.player)
         tx = self.player.pop_transition_x()
+        ty = self.player.pop_transition_y()
+        if ty is not None: self.player.y = ty
         if tx is not None:
             self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
@@ -177,11 +178,11 @@ class GuardedStorageGameLayer(GameLayer):
 class GuardedStorageScene(LayeredScene):
     def __init__(self):
         super().__init__()
-        self.logic_layer = GuardedStorageGameLayer()
-        self.add_layer(self.logic_layer)
+        self.game_layer = GuardedStorageGameLayer()
+        self.add_layer(self.game_layer)
 
     def on_enter(self):
-        self.logic_layer.on_enter()
+        self.game_layer.on_enter()
 
     def reset(self):
-        self.logic_layer.reset()
+        self.game_layer.reset()

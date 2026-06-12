@@ -50,8 +50,7 @@ class BrokenEngineCore(Entity):
         self.is_solid = True
         self.rect = pygame.Rect(0, 0, 96, 128)
         self.rect.center = (int(self.x), int(self.y))
+        self.img = pygame.image.load("assets/images/objects/engine.png")
 
     def paint(self, surface: pygame.Surface):
-        pygame.draw.rect(surface, (50, 50, 50), self.rect)
-        pygame.draw.rect(surface, (255, 50, 50), self.rect, 3)
-        pygame.draw.circle(surface, (150, 50, 50), self.rect.center, 16)
+        surface.blit(self.img, self.rect)

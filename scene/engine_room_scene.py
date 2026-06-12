@@ -44,11 +44,10 @@ class EngineRoomGameLayer(GameLayer):
         tiled_image = TiledImage(tiles_surf, tile_size=8)
         map_data = {}
         for y in range(0, 4):
-            map_data[y] = [(4, (lambda: False)) for _ in range(80)]
+            map_data[y] = [(4, (lambda: False)) for _ in range(20)]
         self.draw_door(map_data, 2, 1)
-        self.draw_door(map_data, 74, 1)
         for y in range(4, 12):
-            map_data[y] = [(2, (lambda: True)) for _ in range(80)]
+            map_data[y] = [(2, (lambda: True)) for _ in range(20)]
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
@@ -56,8 +55,10 @@ class EngineRoomGameLayer(GameLayer):
         self.player = game.player
         self.add_entity(self.player)
         tx = self.player.pop_transition_x()
+        ty = self.player.pop_transition_y()
         if tx is not None:
             self.player.x = tx
+            self.player.y = ty
             self.player.rect.center = (int(self.player.x), int(self.player.y))
 
     def reset(self):
@@ -97,6 +98,7 @@ class EngineRoomGameLayer(GameLayer):
                     if self.engine_scrap >= 3 and self.engine_resin >= 2 and self.engine_igniter and self.engine_keychip:
                         self.engine_repaired = True
                         self.player.transition_x = 100
+                        self.player.transition_y = 500
                         self.remove_entity(self.player)
                         self.game.set_scene("ingame.detachment")
 
@@ -110,7 +112,7 @@ class EngineRoomGameLayer(GameLayer):
                 if self.player.rect.colliderect(e.rect):
                     self.player.add_item(e.item_type, 1)
                     self.remove_entity(e)
-        if self.player.x > 2900:
+        if self.player.x > 780:
             self.player.transition_x = 100
             self.remove_entity(self.player)
             self.game.set_scene("ingame.detachment")
@@ -156,11 +158,11 @@ class EngineRoomGameLayer(GameLayer):
 class EngineRoomScene(LayeredScene):
     def __init__(self):
         super().__init__()
-        self.logic_layer = EngineRoomGameLayer()
-        self.add_layer(self.logic_layer)
+        self.game_layer = EngineRoomGameLayer()
+        self.add_layer(self.game_layer)
 
     def on_enter(self):
-        self.logic_layer.on_enter()
+        self.game_layer.on_enter()
 
     def reset(self):
-        self.logic_layer.reset()
+        self.game_layer.reset()

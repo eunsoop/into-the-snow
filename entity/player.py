@@ -17,6 +17,7 @@ class Player(Entity):
         self.health = 100.0
         self.inventory = {}
         self.transition_x = None
+        self.transition_y = None
         self.spotted_shake = False
         self.rect = pygame.Rect(0, 0, self.width, self.height)
         self.rect.center = (int(self.x), int(self.y))
@@ -50,6 +51,11 @@ class Player(Entity):
     def pop_transition_x(self) -> float | None:
         val = self.transition_x
         self.transition_x = None
+        return val
+
+    def pop_transition_y(self) -> float | None:
+        val = self.transition_y
+        self.transition_y = None
         return val
 
     def pop_spotted_shake(self) -> bool:

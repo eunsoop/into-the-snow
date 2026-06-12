@@ -7,6 +7,7 @@ from pygame.locals import *
 from core import LayeredScene, GameLayer, Fonts, ShakeEffector, FlashEffector, TrainShakeEffector
 from entity.projectile import Bullet
 from entity.enemy import DetachmentBoss
+from scene.background_layers import WeightedBackgroundLayer
 from tilemap import TiledImage, Tilemap, Viewpoint
 from ui.hud import paint_debug_lines
 
@@ -45,20 +46,19 @@ class DetachmentGameLayer(GameLayer):
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
         map_data = {}
-        for y in range(12):
+        for y in range(5, 16):
             row = []
             for x in range(25):
-                is_left_car_floor = (y == 9 and x < 8)
-                is_right_car_floor = (y == 9 and x >= 18)
-                is_left_wall = (x == 0 and y < 9)
-                is_right_wall = (x == 24 and y < 9)
-                is_ceiling = (y == 0)
+                is_left_car_floor = (y == 14 and x < 8)
+                is_right_car_floor = (y == 14 and x >= 18)
+                is_left_wall = (x == 0 and y < 14)
+                is_right_wall = (x == 24 and y < 14)
                 if is_left_car_floor or is_right_car_floor:
                     row.append((4, lambda: False))
-                elif is_left_wall or is_right_wall or is_ceiling:
+                elif is_left_wall or is_right_wall:
                     row.append((4, lambda: False))
                 else:
-                    row.append((2, lambda: True))
+                    row.append((43, lambda: True))
             map_data[y] = row
         return Tilemap(tiled_image, map_data, viewpoint)
 
@@ -67,14 +67,15 @@ class DetachmentGameLayer(GameLayer):
         self.player = game.player
         self.add_entity(self.player)
         tx = self.player.pop_transition_x()
-        if tx is not None:
-            self.player.x = tx
+        ty = self.player.pop_transition_y()
+        if tx is not None:self.player.x = tx
+        if ty is not None:self.player.y = ty
         self.player.y = 344.0
         self.player.rect.center = (int(self.player.x), int(self.player.y))
         self.player_vx = 0.0
         self.player_vy = 0.0
         self.player_on_ground = True
-        engine_room = self.game.scenes["ingame.engineroom"].logic_layer
+        engine_room = self.game.scenes["ingame.engineroom"].game_layer
         if engine_room.engine_repaired and not self.coupling_severed:
             self.combat_active = True
             self.add_effector(FlashEffector(duration=0.5, color=(255, 0, 0), max_alpha=100))
@@ -144,14 +145,15 @@ class DetachmentGameLayer(GameLayer):
             self.separation_offset += 250.0 * dt
             if self.separation_timer <= 0.0:
                 self.remove_entity(self.player)
-                self.game.set_scene("gamewin")
+                self.game.set_scene("outro")
                 return
             self.player.x = max(100.0, min(800.0, self.player.x))
         elif self.combat_active:
             self.player.x = max(100.0, min(900.0, self.player.x))
         else:
             if self.player.x < 15:
-                self.player.transition_x = 2800
+                self.player.transition_x = 300
+                self.player.transition_y = 400
                 self.remove_entity(self.player)
                 self.game.set_scene("ingame.engineroom")
                 return
@@ -163,22 +165,22 @@ class DetachmentGameLayer(GameLayer):
         self.player.rect.centerx = int(self.player.x)
         self.player.y += self.player_vy * dt
         self.player_on_ground = False
-        if self.player.x <= 300.0 and self.player.y + 16.0 >= 360.0 and self.player_vy >= 0:
-            self.player.y = 344.0
+        if self.player.x <= 300.0 and self.player.y + 16.0 >= 562.0 and self.player_vy >= 0:
+            self.player.y = 542.0
             self.player_vy = 0.0
             self.player_on_ground = True
         right_limit = 700.0 + self.separation_offset
-        if self.player.x >= right_limit and self.player.y + 16.0 >= 360.0 and self.player_vy >= 0:
-            self.player.y = 344.0
+        if self.player.x >= right_limit and self.player.y + 16.0 >= 562.0 and self.player_vy >= 0:
+            self.player.y = 542.0
             self.player_vy = 0.0
             self.player_on_ground = True
         if not self.coupling_severed:
-            if 380.0 <= self.player.x <= 620.0 and self.player.y + 16.0 >= 300.0 and self.player.y + 16.0 - self.player_vy * dt <= 308.0 and self.player_vy >= 0:
-                self.player.y = 284.0
+            if 380.0 <= self.player.x <= 620.0 and self.player.y + 16.0 >= 502.0 and self.player.y + 16.0 - self.player_vy * dt <= 540.0 and self.player_vy >= 0:
+                self.player.y = 485.0
                 self.player_vy = 0.0
                 self.player_on_ground = True
         self.player.rect.centery = int(self.player.y)
-        if self.player.y > 500.0:
+        if self.player.y > 600.0:
             self.player.health = 0.0
             self.game.set_scene("gameover")
             return
@@ -246,9 +248,6 @@ class DetachmentGameLayer(GameLayer):
         viewpoint = self.tilemap.viewpoint
         viewpoint.x = 0
         viewpoint.y = 110
-        surface.fill((10, 12, 18))
-        pygame.draw.polygon(surface, (18, 20, 28), [(0, 400), (250, 250), (500, 380), (750, 220), (1000, 400), (1000, 700), (0, 700)])
-        pygame.draw.polygon(surface, (14, 16, 22), [(0, 480), (350, 300), (700, 450), (1000, 320), (1000, 700), (0, 700)])
         for p in self.snow_particles:
             pygame.draw.line(surface, (200, 200, 220), (p["x"], p["y"]), (p["x"] - p["length"], p["y"] + p["length"] // 4), 2)
         self.paint_tilemap(surface)
@@ -259,7 +258,7 @@ class DetachmentGameLayer(GameLayer):
                 obj.rect.y += viewpoint.y
                 obj.paint(surface)
                 obj.rect.center = orig_center
-        vx, vy = viewpoint.x, viewpoint.y
+        vx, vy = viewpoint.x, viewpoint.y + 200
         if not self.coupling_severed:
             pygame.draw.line(surface, (100, 100, 100), (300 + vx, 360 + vy), (380 + vx, 300 + vy), 6)
             pygame.draw.line(surface, (100, 100, 100), (620 + vx, 300 + vy), (700 + self.separation_offset + vx, 360 + vy), 6)
@@ -311,11 +310,23 @@ class DetachmentGameLayer(GameLayer):
 class DetachmentScene(LayeredScene):
     def __init__(self):
         super().__init__()
-        self.logic_layer = DetachmentGameLayer()
-        self.add_layer(self.logic_layer)
+        self.bg_layer = WeightedBackgroundLayer(
+            [
+                (f"assets/images/background/detach/{i}.png", 0.4*(5-i)) for i in range(5, 1, -1)
+            ],
+            -380,
+            2
+        )
+        self.game_layer = DetachmentGameLayer()
+        self.add_layer(self.bg_layer)
+        self.add_layer(self.game_layer)
 
     def on_enter(self):
-        self.logic_layer.on_enter()
+        self.game_layer.on_enter()
+
+    def paint(self, surface: pygame.Surface):
+        super().paint(surface)
+        self.bg_layer.tick()
 
     def reset(self):
-        self.logic_layer.reset()
+        self.game_layer.reset()

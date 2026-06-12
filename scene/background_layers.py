@@ -5,17 +5,18 @@ from core import Layer
 
 
 class WeightedBackgroundLayer(Layer):
-    def __init__(self, backgrounds: list[tuple[str, float]]):
+    def __init__(self, backgrounds: list[tuple[str, float]], offset_y: int = 0, scale_factor: float = 1):
         super().__init__()
 
         def scale_image(bg):
             path, weight = bg
             img = pygame.image.load(path)
-            scale = max(1000 / img.get_width(), 700 / img.get_height())
+            scale = max(1000 / img.get_width(), 700 / img.get_height())*scale_factor
             return pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale))), weight
 
         self.backgrounds = list(map(scale_image, backgrounds))
         self.tick_time = 0
+        self.offset_y = offset_y*scale_factor
 
     def event(self, event):
         pass
@@ -26,8 +27,8 @@ class WeightedBackgroundLayer(Layer):
     def paint(self, surface: Surface):
         for bg in self.backgrounds:
             img, weight = bg
-            surface.blit(img, (-(self.tick_time * weight % (img.get_width())), 0))
-            surface.blit(img, (img.get_width() - (self.tick_time * weight % (img.get_width())), 0))
+            surface.blit(img, (-(self.tick_time * weight % (img.get_width())), self.offset_y))
+            surface.blit(img, (img.get_width() - (self.tick_time * weight % (img.get_width())), self.offset_y))
 
 
 class RepeatingImageLayer(Layer):

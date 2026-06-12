@@ -34,7 +34,7 @@ class Boss(Entity):
             self.rect.center = (int(self.x), int(self.y))
 
             self.shoot_timer += dt
-            if self.shoot_timer >= 1.5:
+            if self.shoot_timer >= .5:
                 self.shoot_timer = 0.0
                 b = Bullet(self.x - 40, self.y, -1.0, 0.0, is_enemy=True)
                 b.speed = 220
@@ -103,9 +103,9 @@ class Guard(Entity):
 
 
 class DetachmentBoss(Boss):
-    LEFT_FLOOR_Y = 344.0
-    RIGHT_FLOOR_Y = 344.0
-    COUPLER_Y = 284.0
+    LEFT_FLOOR_Y = 540.0
+    RIGHT_FLOOR_Y = 540.0
+    COUPLER_Y = 480.0
     COUPLER_LEFT = 380.0
     COUPLER_RIGHT = 620.0
     LEFT_MAX_X = 300.0
@@ -197,7 +197,7 @@ class DetachmentBoss(Boss):
                 self.layer.get_game().set_scene("gameover")
                 return
         self.shoot_timer += dt
-        if self.shoot_timer >= 1.5:
+        if self.shoot_timer >= .15:
             self.shoot_timer = 0.0
             if player:
                 dir_x = -1.0 if player.x < self.x else 1.0
