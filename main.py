@@ -9,6 +9,7 @@ from scene.guarded_storage_scene import GuardedStorageScene
 from scene.engine_room_scene import EngineRoomScene
 from scene.game_over_scene import GameOverScene
 from scene.game_win_scene import GameWinScene
+from scene.detachment_scene import DetachmentScene
 
 WIDTH, HEIGHT = 1000, 700
 
@@ -81,6 +82,7 @@ if __name__ == "__main__":
     game.register_scene("ingame.engineroom", EngineRoomScene())
     game.register_scene("ingame.tailworkshop", TailWorkshopScene())
     game.register_scene("ingame.guardedstorage", GuardedStorageScene())
+    game.register_scene("ingame.detachment", DetachmentScene())
     game.register_scene("gameover", GameOverScene())
     game.register_scene("gamewin", GameWinScene())
     

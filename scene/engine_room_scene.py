@@ -1,3 +1,4 @@
+import math
 import pygame
 from pygame.locals import *
 
@@ -6,6 +7,7 @@ from entity import Entity
 from entity.enemy import Boss
 from entity.projectile import Bullet
 from tilemap import TiledImage, Tilemap, Viewpoint
+from entity.collectible import CollectibleItem
 
 
 class BrokenEngineCore(Entity):
@@ -26,19 +28,32 @@ class BrokenEngineCore(Entity):
 class EngineRoomGameLayer(GameLayer):
     def __init__(self):
         super().__init__()
-        
+
         self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
-        
+
         self.engine = BrokenEngineCore(200, 300)
         self.tilemap.add_stationary(self.engine)
-        
+
         self.player = None
-        self.boss = None
         self.engine_repaired = False
-        self.detachment_timer = 30.0
-        self.boss_hp = 100
-        
+        self.engine_scrap = 0
+        self.engine_resin = 0
+        self.engine_igniter = False
+        self.engine_keychip = False
+
+        self.fire_cooldown_timer = 0.15
         self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=5.0, jolt_intensity=2.0, jolt_duration=0.4))
+        self.spawn_collectibles()
+
+    def spawn_collectibles(self):
+        for e in self.entities[:]:
+            if isinstance(e, CollectibleItem):
+                self.remove_entity(e)
+        self.add_entity(CollectibleItem(500, 250, "frozen_scrap"))
+        self.add_entity(CollectibleItem(1100, 430, "alpine_resin"))
+        self.add_entity(CollectibleItem(1800, 200, "alpine_resin"))
+        self.add_entity(CollectibleItem(800, 300, "coal"))
+        self.add_entity(CollectibleItem(1500, 430, "coal"))
 
     def draw_door(self, map_data: dict, x, y):
         for dy, oy in enumerate(range(2, 5)):
@@ -46,7 +61,7 @@ class EngineRoomGameLayer(GameLayer):
                 map_data[y+dy][x+dx] = (oy*6+ox, (lambda: False))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
-        tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png")
+        tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
 
         map_data = {}
@@ -60,115 +75,136 @@ class EngineRoomGameLayer(GameLayer):
         game = self.get_game()
         self.player = game.player
         self.add_entity(self.player)
-        
+
         tx = self.player.pop_transition_x()
         if tx is not None:
             self.player.x = tx
             self.player.rect.center = (int(self.player.x), int(self.player.y))
-        
-        if self.engine_repaired:
-            if self.boss not in self.entities and self.boss_hp > 0:
-                self.boss = Boss(2400, 300, 100, 600)
-                self.boss.hp = self.boss_hp
-                self.add_entity(self.boss)
+
+
 
     def reset(self):
         if self.player and self.player in self.entities:
             self.remove_entity(self.player)
         self.player = None
         self.engine_repaired = False
-        self.detachment_timer = 30.0
-        self.boss_hp = 100
-        if self.boss in self.entities:
-            self.remove_entity(self.boss)
-        self.boss = None
-        bullets = [e for e in self.entities if isinstance(e, Bullet)]
-        for b in bullets:
-            self.remove_entity(b)
+        self.engine_scrap = 0
+        self.engine_resin = 0
+        self.engine_igniter = False
+        self.engine_keychip = False
+        self.spawn_collectibles()
 
     def event(self, event):
         super().event(event)
-        
-        if event.type == KEYDOWN and event.key == K_SPACE:
-            if self.player.has_item("stun_gun"):
-                b = Bullet(self.player.x + 24, self.player.y, 1.0, 0.0, is_enemy=False)
-                b.speed = 350
-                self.add_entity(b)
-                self.add_effector(ShakeEffector(duration=0.15, intensity=3.0))
 
-        if event.type == KEYDOWN and event.key == K_e:
-            if self.player.rect.colliderect(self.engine.rect):
+        if event.type == KEYDOWN and event.key == K_f:
+            if self.player.rect.inflate(40, 40).colliderect(self.engine.rect):
                 if not self.engine_repaired:
-                    if (self.player.get_item_count("frozen_scrap") >= 3 and 
-                        self.player.get_item_count("alpine_resin") >= 2 and 
-                        self.player.has_item("igniter") and 
-                        self.player.has_item("keychip")):
-                        
-                        self.player.remove_item("frozen_scrap", 3)
-                        self.player.remove_item("alpine_resin", 2)
+                    if self.engine_scrap < 3 and self.player.get_item_count("frozen_scrap") >= 1:
+                        self.player.remove_item("frozen_scrap", 1)
+                        self.engine_scrap += 1
+                        self.add_effector(ShakeEffector(duration=0.15, intensity=2.0))
+                    elif self.engine_resin < 2 and self.player.get_item_count("alpine_resin") >= 1:
+                        self.player.remove_item("alpine_resin", 1)
+                        self.engine_resin += 1
+                        self.add_effector(ShakeEffector(duration=0.15, intensity=2.0))
+                    elif not self.engine_igniter and self.player.has_item("igniter"):
+                        self.player.remove_item("igniter", 1)
+                        self.engine_igniter = True
+                        self.add_effector(ShakeEffector(duration=0.15, intensity=4.0))
+                        self.add_effector(FlashEffector(duration=0.1, color=(255, 255, 255), max_alpha=100))
+                    elif not self.engine_keychip and self.player.has_item("keychip"):
+                        self.player.remove_item("keychip", 1)
+                        self.engine_keychip = True
+                        self.add_effector(ShakeEffector(duration=0.15, intensity=4.0))
+                        self.add_effector(FlashEffector(duration=0.1, color=(255, 255, 255), max_alpha=100))
+
+                    if self.engine_scrap >= 3 and self.engine_resin >= 2 and self.engine_igniter and self.engine_keychip:
                         self.engine_repaired = True
-                        self.detachment_timer = 30.0
-                        
-                        self.boss = Boss(2400, 300, 100, 600)
-                        self.add_entity(self.boss)
+                        self.player.transition_x = 100
+                        self.remove_entity(self.player)
+                        self.game.set_scene("ingame.detachment")
 
     def update(self):
         super().update()
-        dt = self.get_game().get_dt()
-        
+        dt = self.game.get_dt()
+
+        if self.player.has_item("ak47"):
+            self.fire_cooldown_timer = max(0.0, self.fire_cooldown_timer - dt)
+            mouse_buttons = pygame.mouse.get_pressed()
+            if mouse_buttons[0] and self.fire_cooldown_timer <= 0.0:
+                self.fire_cooldown_timer = 0.12
+                mx, my = pygame.mouse.get_pos()
+                vp = self.tilemap.viewpoint
+                wx = mx - vp.x
+                wy = my - vp.y
+                dx = wx - self.player.x
+                dy = wy - self.player.y
+                dist = math.hypot(dx, dy)
+                if dist > 0:
+                    dx /= dist
+                    dy /= dist
+                else:
+                    dx, dy = self.player.facing
+                b = Bullet(self.player.x + dx * 16, self.player.y + dy * 16, dx, dy, is_enemy=False)
+                b.speed = 500
+                self.add_entity(b)
+                self.add_effector(ShakeEffector(duration=0.10, intensity=2.5))
+
+        for e in self.entities[:]:
+            if isinstance(e, CollectibleItem):
+                if self.player.rect.colliderect(e.rect):
+                    self.player.add_item(e.item_type, 1)
+                    self.remove_entity(e)
+
         if self.player.x > 2900:
             self.player.transition_x = 100
             self.remove_entity(self.player)
-            self.game.set_scene("ingame.tailworkshop")
+            self.game.set_scene("ingame.detachment")
             return
 
-        if self.engine_repaired:
-            self.detachment_timer -= dt
-            if self.detachment_timer <= 0:
-                self.detachment_timer = 0
-                self.remove_entity(self.player)
-                self.game.set_scene("gamewin")
-                return
 
-        bullets = [e for e in self.entities if isinstance(e, Bullet)]
-        for b in bullets:
-            if b.is_enemy:
-                if b.rect.colliderect(self.player.rect):
-                    self.player.health = max(0.0, self.player.health - 15.0)
-                    self.add_effector(ShakeEffector(duration=0.3, intensity=10.0))
-                    self.add_effector(FlashEffector(duration=0.15, color=(255, 0, 0), max_alpha=128))
-                    if b in self.entities:
-                        self.remove_entity(b)
-            else:
-                if self.boss in self.entities and b.rect.colliderect(self.boss.rect):
-                    self.boss.hp -= 10
-                    self.boss_hp = self.boss.hp
-                    if b in self.entities:
-                        self.remove_entity(b)
-                    
-                    if self.boss.hp <= 0:
-                        self.remove_entity(self.boss)
-                        self.boss_hp = 0
-                    break
 
     def paint(self, surface: pygame.Surface):
         super().paint(surface)
-        
+
+        if not self.engine_repaired and self.player.rect.inflate(40, 40).colliderect(self.engine.rect):
+            prompt_font = Fonts.Jersey_10(24)
+            can_insert = (
+                (self.engine_scrap < 3 and self.player.get_item_count("frozen_scrap") >= 1) or
+                (self.engine_resin < 2 and self.player.get_item_count("alpine_resin") >= 1) or
+                (not self.engine_igniter and self.player.has_item("igniter")) or
+                (not self.engine_keychip and self.player.has_item("keychip"))
+            )
+            ign_status = "OK" if self.engine_igniter else "NO"
+            key_status = "OK" if self.engine_keychip else "NO"
+            text = f"Engine Core - Scrap: {self.engine_scrap}/3, Resin: {self.engine_resin}/2, Igniter: {ign_status}, Keychip: {key_status}"
+            if can_insert:
+                text += "    [F] Insert Component"
+            else:
+                text += "    (Need parts)"
+
+            prompt = prompt_font.render(text, True, (255, 255, 255))
+            viewpoint = self.tilemap.viewpoint
+            px = self.engine.rect.centerx + viewpoint.x - prompt.get_width() // 2
+            py = self.engine.rect.y + viewpoint.y - 30
+            surface.blit(prompt, (px, py))
+
         font = Fonts.Jersey_10(20)
-        
-        boss_hp_str = str(self.boss.hp) if (self.boss and self.boss in self.entities) else "0"
-        timer_str = str(int(self.detachment_timer)) if self.engine_repaired else "30"
-        
+
         lines = [
             f"X: {int(self.player.x)} Y: {int(self.player.y)}",
             f"CamX: {int(self.tilemap.viewpoint.x)} CamY: {int(self.tilemap.viewpoint.y)}",
             f"HP: {int(self.player.health)}",
             f"Temp: {int(self.player.temperature)}",
+            f"Scrap: {self.player.get_item_count('frozen_scrap')}",
+            f"Resin: {self.player.get_item_count('alpine_resin')}",
+            f"Coal: {self.player.get_item_count('coal')}",
             f"Engine: {self.engine_repaired}",
-            f"Time: {timer_str}",
-            f"Boss: {boss_hp_str}"
+            f"Medkit: {self.player.get_item_count('medkit')}",
+            f"Thermopack: {self.player.get_item_count('thermopack')}"
         ]
-        
+
         y_offset = 20
         for line in lines:
             if line:

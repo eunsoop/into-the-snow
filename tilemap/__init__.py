@@ -5,7 +5,7 @@ from pygame import Surface
 
 class TiledImage:
     def __init__(self, tiles: Surface, tile_size: int):
-        self.tiles = tiles
+        self.tiles = tiles.convert_alpha()
         self.tile_size = tile_size
         self.max_idx = tuple(map(lambda i: i/tile_size, self.tiles.get_size()))
         self._scaled_tiles = {}
