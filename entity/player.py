@@ -103,7 +103,7 @@ class Player(Entity):
             dt = self.layer.get_game().get_dt()
 
             if hasattr(self.layer, "is_platformer") and self.layer.is_platformer:
-                self.temperature -= .5 * dt
+                self.temperature -= .9 * dt
                 if self.temperature <= 0 or self.health <= 0:
                     self.temperature = max(0.0, self.temperature)
                     self.health = max(0.0, self.health)

@@ -47,8 +47,8 @@ class LayeredScene(Scene):
         for layer in layers:
             self.add_layer(layer)
 
-    def add_effector(self):
-        pass
+    def add_effector(self, effector):
+        self.effectors.append(effector)
 
     def reset(self):
         for layer in self.layers:
@@ -78,15 +78,13 @@ class LayeredScene(Scene):
             layer.paint(layer.surface)
 
             offset_x, offset_y = 0.0, 0.0
-            active_effectors = []
-            for eff in layer.effectors:
+            effectors = [*self.effectors, *layer.effectors]
+            for eff in effectors:
                 eff.update(dt)
                 if not eff.is_finished():
                     ox, oy = eff.apply_offset()
                     offset_x += ox
                     offset_y += oy
                     eff.apply_post(layer.surface)
-                    active_effectors.append(eff)
-            layer.effectors = active_effectors
 
             surface.blit(layer.surface, (int(offset_x), int(offset_y)))

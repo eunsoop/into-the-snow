@@ -22,7 +22,7 @@ class GuardedStorageGameLayer(GameLayer):
         for g in self.guards:
             self.add_entity(g)
         self.igniter = StolenPart(1200, 200, "igniter")
-        self.keychip = StolenPart(2500, 400, "keychip")
+        self.keychip = StolenPart(700, 400, "keychip")
         self.add_entity(self.igniter)
         self.add_entity(self.keychip)
         self.fire_cooldown_timer = 0.15
@@ -33,7 +33,7 @@ class GuardedStorageGameLayer(GameLayer):
         for e in self.entities[:]:
             if isinstance(e, CollectibleItem):
                 self.remove_entity(e)
-        self.add_entity(CollectibleItem(900, 430, "frozen_scrap"))
+        self.add_entity(CollectibleItem(920, 430, "frozen_scrap"))
         self.add_entity(CollectibleItem(1600, 200, "alpine_resin"))
         self.add_entity(CollectibleItem(2200, 430, "frozen_scrap"))
         self.add_entity(CollectibleItem(700, 250, "coal"))
@@ -73,6 +73,7 @@ class GuardedStorageGameLayer(GameLayer):
             map_data[y] = [(2, (lambda: True)) for _ in range(56)]
         for i in range(0, 7):
             self.draw_chair(map_data, 6 + i * 3, 7)
+        map_data[12] = [(43, (lambda: False)) for _ in range(56)]
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
@@ -102,7 +103,7 @@ class GuardedStorageGameLayer(GameLayer):
                 self.remove_entity(g)
         self.guards = [
             Guard(500, 200, 300, 800),
-            Guard(1100, 400, 700, 1400),
+            Guard(500, 300, 300, 900),
             Guard(1800, 250, 1300, 2200),
             Guard(2400, 450, 1800, 2800)
         ]
@@ -113,7 +114,7 @@ class GuardedStorageGameLayer(GameLayer):
         if self.keychip in self.entities:
             self.remove_entity(self.keychip)
         self.igniter = StolenPart(1200, 200, "igniter")
-        self.keychip = StolenPart(2500, 400, "keychip")
+        self.keychip = StolenPart(700, 400, "keychip")
         self.add_entity(self.igniter)
         self.add_entity(self.keychip)
         self.spawn_collectibles()
@@ -158,7 +159,8 @@ class GuardedStorageGameLayer(GameLayer):
         for g in self.guards:
             if not g.is_stunned and self.player.rect.colliderect(g.los_rect):
                 self.player.health = max(10.0, self.player.health - 20.0)
-                self.player.transition_x = 1000
+                self.player.transition_x = 480
+                self.player.transition_y = 200
                 self.player.spotted_shake = True
                 self.remove_entity(self.player)
                 self.game.set_scene("ingame.tailworkshop")

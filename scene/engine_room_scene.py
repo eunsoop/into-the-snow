@@ -54,6 +54,7 @@ class EngineRoomGameLayer(GameLayer):
         self.draw_door(map_data, 2, 1)
         for y in range(4, 12):
             map_data[y] = [(2, (lambda: True)) for _ in range(20)]
+        map_data[12] = [(43, (lambda: False)) for _ in range(20)]
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
