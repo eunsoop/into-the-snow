@@ -7,8 +7,8 @@ from entity.stationary import BrokenEngineCore
 from tilemap import TiledImage, Tilemap, Viewpoint
 from ui.hud import fire_weapon_at_mouse, paint_debug_lines
 
-
 class EngineRoomGameLayer(GameLayer):
+
     def __init__(self):
         super().__init__()
         self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
@@ -35,11 +35,17 @@ class EngineRoomGameLayer(GameLayer):
         self.add_entity(CollectibleItem(1500, 430, "coal"))
 
     def draw_door(self, map_data, x, y):
+
         for dy, oy in enumerate(range(2, 5)):
             for dx, ox in enumerate(range(2, 6)):
                 map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
+        """
+        Create and load the tilemap environment structure for the engine room.
+        :param viewpoint: Viewpoint camera parameters
+        :return: Initialized Tilemap object
+        """
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
         map_data = {}
@@ -75,8 +81,10 @@ class EngineRoomGameLayer(GameLayer):
     def event(self, event):
         super().event(event)
         if event.type == KEYDOWN and event.key == K_f:
+
             if self.player.rect.inflate(40, 40).colliderect(self.engine.rect):
                 if not self.engine_repaired:
+
                     if self.engine_scrap < 3 and self.player.get_item_count("frozen_scrap") >= 1:
                         self.player.remove_item("frozen_scrap", 1)
                         self.engine_scrap += 1
@@ -95,6 +103,7 @@ class EngineRoomGameLayer(GameLayer):
                         self.engine_keychip = True
                         self.add_effector(ShakeEffector(duration=0.15, intensity=4.0))
                         self.add_effector(FlashEffector(duration=0.1, color=(255, 255, 255), max_alpha=100))
+                    
                     if self.engine_scrap >= 3 and self.engine_resin >= 2 and self.engine_igniter and self.engine_keychip:
                         self.engine_repaired = True
                         self.player.transition_x = 100
@@ -119,6 +128,10 @@ class EngineRoomGameLayer(GameLayer):
             return
 
     def paint(self, surface: pygame.Surface):
+        """
+        Draw the engine room game scene layers, repair prompt status, and HUD details.
+        :param surface: The destination drawing pygame.Surface
+        """
         super().paint(surface)
         if not self.engine_repaired and self.player.rect.inflate(40, 40).colliderect(self.engine.rect):
             prompt_font = Fonts.Jersey_10(24)
@@ -154,8 +167,8 @@ class EngineRoomGameLayer(GameLayer):
         ]
         paint_debug_lines(surface, lines)
 
-
 class EngineRoomScene(LayeredScene):
+
     def __init__(self):
         super().__init__()
         self.game_layer = EngineRoomGameLayer()
@@ -166,3 +179,4 @@ class EngineRoomScene(LayeredScene):
 
     def reset(self):
         self.game_layer.reset()
+

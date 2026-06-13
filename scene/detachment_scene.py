@@ -11,8 +11,8 @@ from scene.background_layers import WeightedBackgroundLayer
 from tilemap import TiledImage, Tilemap, Viewpoint
 from ui.hud import paint_debug_lines
 
-
 class DetachmentGameLayer(GameLayer):
+
     def __init__(self):
         super().__init__()
         self.is_platformer = True
@@ -43,6 +43,7 @@ class DetachmentGameLayer(GameLayer):
         self.add_effector(TrainShakeEffector(base_intensity=0.5, jolt_frequency=4.0, jolt_intensity=2.0, jolt_duration=0.4))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
+        """Create grid representation of left and right carriage platforms."""
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
         map_data = {}
@@ -75,6 +76,7 @@ class DetachmentGameLayer(GameLayer):
         self.player_vx = 0.0
         self.player_vy = 0.0
         self.player_on_ground = True
+        
         engine_room = self.game.scenes["ingame.engineroom"].game_layer
         if engine_room.engine_repaired and not self.coupling_severed:
             self.combat_active = True
@@ -113,16 +115,19 @@ class DetachmentGameLayer(GameLayer):
     def update(self):
         super().update()
         dt = self.game.get_dt()
+        
         for p in self.snow_particles:
             speed_mult = 1.8 if self.coupling_severed else (1.4 if self.combat_active else 1.0)
             p["x"] -= p["speed"] * speed_mult * dt
             if p["x"] < 0:
                 p["x"] = 1000
                 p["y"] = random.randint(100, 550)
+                
         if self.hud_message_timer > 0.0:
             self.hud_message_timer -= dt
             if self.hud_message_timer <= 0.0:
                 self.hud_message = ""
+                
         self.player_vy += 1200.0 * dt
         keys = pygame.key.get_pressed()
         self.player_vx = 0.0
@@ -133,13 +138,16 @@ class DetachmentGameLayer(GameLayer):
         if keys[K_w] and self.player_on_ground:
             self.player_vy = -450.0
             self.player_on_ground = False
+            
         mx, my = pygame.mouse.get_pos()
         vx, vy = 0, 110
         if mx < self.player.x + vx:
             self.player.facing = (-1.0, 0.0)
         else:
             self.player.facing = (1.0, 0.0)
+            
         self.player.x += self.player_vx * dt
+        
         if self.coupling_severed:
             self.separation_timer -= dt
             self.separation_offset += 250.0 * dt
@@ -151,6 +159,7 @@ class DetachmentGameLayer(GameLayer):
         elif self.combat_active:
             self.player.x = max(100.0, min(900.0, self.player.x))
         else:
+
             if self.player.x < 15:
                 self.player.transition_x = 300
                 self.player.transition_y = 400
@@ -162,9 +171,11 @@ class DetachmentGameLayer(GameLayer):
                 self.remove_entity(self.player)
                 self.game.set_scene("ingame.tailworkshop")
                 return
+                
         self.player.rect.centerx = int(self.player.x)
         self.player.y += self.player_vy * dt
         self.player_on_ground = False
+        
         if self.player.x <= 300.0 and self.player.y + 16.0 >= 562.0 and self.player_vy >= 0:
             self.player.y = 542.0
             self.player_vy = 0.0
@@ -175,15 +186,18 @@ class DetachmentGameLayer(GameLayer):
             self.player_vy = 0.0
             self.player_on_ground = True
         if not self.coupling_severed:
+
             if 380.0 <= self.player.x <= 620.0 and self.player.y + 16.0 >= 502.0 and self.player.y + 16.0 - self.player_vy * dt <= 540.0 and self.player_vy >= 0:
                 self.player.y = 485.0
                 self.player_vy = 0.0
                 self.player_on_ground = True
+                
         self.player.rect.centery = int(self.player.y)
         if self.player.y > 600.0:
             self.player.health = 0.0
             self.game.set_scene("gameover")
             return
+            
         if not self.coupling_severed and self.player.has_item("ak47"):
             self.fire_cooldown_timer = max(0.0, self.fire_cooldown_timer - dt)
             mouse_buttons = pygame.mouse.get_pressed()
@@ -204,6 +218,7 @@ class DetachmentGameLayer(GameLayer):
                 b.speed = 600
                 self.add_entity(b)
                 self.add_effector(ShakeEffector(duration=0.06, intensity=1.2))
+                
         bullets = [e for e in self.entities if isinstance(e, Bullet)]
         for b in bullets:
             if b.is_enemy:
@@ -235,6 +250,7 @@ class DetachmentGameLayer(GameLayer):
         for y, row in self.tilemap.map_data.items():
             screen_y = y * ts + self.tilemap.viewpoint.y
             for x, (tile_type, _) in enumerate(row):
+
                 x_offset = self.separation_offset if x >= 18 else 0.0
                 screen_x = x * ts + self.tilemap.viewpoint.x + x_offset
                 if screen_x + ts < 0 or screen_x > surface.get_width():
@@ -242,6 +258,10 @@ class DetachmentGameLayer(GameLayer):
                 self.tilemap.tile.draw(surface, (screen_x, screen_y), tile_type, self.tilemap.viewpoint.z)
 
     def paint(self, surface: pygame.Surface):
+        """
+        Draw the detachment layer including snow particles, tiles, and player/enemy blocks.
+        :param surface: The destination drawing pygame.Surface
+        """
         self.update()
         for e in self.entities:
             e.update()
@@ -258,6 +278,7 @@ class DetachmentGameLayer(GameLayer):
                 obj.rect.y += viewpoint.y
                 obj.paint(surface)
                 obj.rect.center = orig_center
+                
         vx, vy = viewpoint.x, viewpoint.y + 200
         if not self.coupling_severed:
             pygame.draw.line(surface, (100, 100, 100), (300 + vx, 360 + vy), (380 + vx, 300 + vy), 6)
@@ -271,11 +292,13 @@ class DetachmentGameLayer(GameLayer):
             pygame.draw.line(surface, (100, 100, 100), (620 + self.separation_offset + vx, 300 + vy), (700 + self.separation_offset + vx, 360 + vy), 6)
             pygame.draw.line(surface, (80, 80, 80), (520 + self.separation_offset + vx, 320 + vy), (620 + self.separation_offset + vx, 300 + vy), 12)
             pygame.draw.line(surface, (140, 140, 140), (520 + self.separation_offset + vx, 320 + vy), (620 + self.separation_offset + vx, 300 + vy), 4)
+            
         if self.combat_active and not self.coupling_severed:
             pygame.draw.line(surface, (255, 50, 50), (80 + vx, 240 + vy), (80 + vx, 380 + vy), 4)
             pygame.draw.line(surface, (255, 120, 120), (80 + vx, 240 + vy), (80 + vx, 380 + vy), 2)
             pygame.draw.line(surface, (255, 50, 50), (920 + self.separation_offset + vx, 240 + vy), (920 + self.separation_offset + vx, 380 + vy), 4)
             pygame.draw.line(surface, (255, 120, 120), (920 + self.separation_offset + vx, 240 + vy), (920 + self.separation_offset + vx, 380 + vy), 2)
+            
         if self.player and self.combat_active and not self.coupling_severed:
             mx, my = pygame.mouse.get_pos()
             px_s = int(self.player.x + vx)
@@ -290,6 +313,7 @@ class DetachmentGameLayer(GameLayer):
             end_y = int(py_s + aim_dy * 60)
             pygame.draw.line(surface, (255, 255, 100, 160), (px_s, py_s), (end_x, end_y), 2)
             pygame.draw.circle(surface, (255, 255, 0), (mx, my), 5, 2)
+            
         font_prompt = Fonts.Jersey_10(24)
         if self.hud_message:
             msg_surf = font_prompt.render(self.hud_message, True, (255, 100, 100))
@@ -306,8 +330,8 @@ class DetachmentGameLayer(GameLayer):
             win_msg = font_prompt.render("COUPLING SEVERED! DECOUPLING...", True, (255, 255, 255))
             surface.blit(win_msg, (surface.get_width() // 2 - win_msg.get_width() // 2, 240))
 
-
 class DetachmentScene(LayeredScene):
+
     def __init__(self):
         super().__init__()
         self.bg_layer = WeightedBackgroundLayer(
@@ -330,3 +354,4 @@ class DetachmentScene(LayeredScene):
 
     def reset(self):
         self.game_layer.reset()
+

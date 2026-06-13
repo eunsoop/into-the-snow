@@ -2,9 +2,17 @@ import pygame
 
 from entity.base import Entity
 
-
 class Bullet(Entity):
+
     def __init__(self, x: float, y: float, dx: float, dy: float, is_enemy: bool = False):
+        """
+        Initialize the Bullet.
+        :param x: Initial X coordinate
+        :param y: Initial Y coordinate
+        :param dx: X axis normalized travel direction component
+        :param dy: Y axis normalized travel direction component
+        :param is_enemy: If True, bullet is colored orange (hurts player). Otherwise yellow.
+        """
         super().__init__(x, y)
         self.dx = dx
         self.dy = dy
@@ -16,6 +24,7 @@ class Bullet(Entity):
     def update(self):
         if self.layer and self.layer.get_game():
             dt = self.layer.get_game().get_dt()
+
             self.x += self.dx * self.speed * dt
             self.y += self.dy * self.speed * dt
             self.rect.center = (int(self.x), int(self.y))
@@ -33,3 +42,4 @@ class Bullet(Entity):
     def paint(self, surface: pygame.Surface):
         color = (255, 100, 0) if self.is_enemy else (255, 255, 0)
         pygame.draw.rect(surface, color, self.rect)
+

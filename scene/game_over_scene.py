@@ -3,8 +3,8 @@ import pygame
 from core import LayeredScene, UserInterfaceLayer, Fonts
 from ui import Button, Label
 
-
 class GameOverScene(LayeredScene):
+
     def __init__(self):
         super().__init__()
         self.ui_layer = UserInterfaceLayer(elements=[
@@ -29,3 +29,4 @@ class GameOverScene(LayeredScene):
     def paint(self, surface: pygame.Surface):
         surface.fill((30, 10, 10))
         super().paint(surface)
+

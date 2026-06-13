@@ -7,8 +7,8 @@ from entity.projectile import Bullet
 from tilemap import TiledImage, Tilemap, Viewpoint
 from ui.hud import fire_weapon_at_mouse, paint_debug_lines
 
-
 class GuardedStorageGameLayer(GameLayer):
+
     def __init__(self):
         super().__init__()
         self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
@@ -55,6 +55,11 @@ class GuardedStorageGameLayer(GameLayer):
                 map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
+        """
+        Set up the guarded storage room tilemap layout structure.
+        :param viewpoint: Viewpoint camera mapping parameters
+        :return: Initialized Tilemap object
+        """
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
         map_data = {}
@@ -139,6 +144,7 @@ class GuardedStorageGameLayer(GameLayer):
                     elif e.part_type == "keychip":
                         self.player.add_item("keychip")
                     self.remove_entity(e)
+                    
         bullets = [e for e in self.entities if isinstance(e, Bullet)]
         for b in bullets:
             for g in self.guards:
@@ -148,6 +154,7 @@ class GuardedStorageGameLayer(GameLayer):
                     if b in self.entities:
                         self.remove_entity(b)
                     break
+                    
         for g in self.guards:
             if not g.is_stunned and self.player.rect.colliderect(g.los_rect):
                 self.player.health = max(10.0, self.player.health - 20.0)
@@ -158,6 +165,10 @@ class GuardedStorageGameLayer(GameLayer):
                 return
 
     def paint(self, surface: pygame.Surface):
+        """
+        Draw the guarded storage game environment layer and debug HUD stats.
+        :param surface: The destination drawing pygame.Surface
+        """
         super().paint(surface)
         lines = [
             f"X: {int(self.player.x)} Y: {int(self.player.y)}",
@@ -174,7 +185,6 @@ class GuardedStorageGameLayer(GameLayer):
         ]
         paint_debug_lines(surface, lines)
 
-
 class GuardedStorageScene(LayeredScene):
     def __init__(self):
         super().__init__()
@@ -186,3 +196,4 @@ class GuardedStorageScene(LayeredScene):
 
     def reset(self):
         self.game_layer.reset()
+

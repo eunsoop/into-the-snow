@@ -3,10 +3,11 @@ import pygame
 from core import LayeredScene, Fonts
 from scene.background_layers import WeightedBackgroundLayer, RepeatingImageLayer, TrainLayer
 
-
 class IntroScene(LayeredScene):
+
     def __init__(self):
         super().__init__()
+
         self.stage1 = [
             WeightedBackgroundLayer(
                 [
@@ -48,7 +49,12 @@ class IntroScene(LayeredScene):
             self.game.set_scene("ingame.tailworkshop")
 
     def paint(self, surface: pygame.Surface):
+        """
+        Animate the background layers and render the semi-transparent instruction panel.
+        :param surface: Target drawing Surface
+        """
         super().paint(surface)
+
         self.stage1[0].tick()
         self.stage1[1].tick()
 
@@ -78,3 +84,4 @@ class IntroScene(LayeredScene):
             color = (150, 255, 150) if "SPACE" in line else (220, 220, 220)
             surface.blit(font_text.render(line, True, color), (130, y))
             y += 30
+

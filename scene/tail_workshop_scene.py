@@ -7,8 +7,8 @@ from entity.stationary import CraftingTable, Furnace
 from tilemap import TiledImage, Tilemap, Viewpoint
 from ui.hud import fire_weapon_at_mouse, paint_debug_lines
 
-
 class TailWorkshopGameLayer(GameLayer):
+
     def __init__(self):
         super().__init__()
         self.tilemap = self.setup_map(Viewpoint(0, 0, 5))
@@ -34,11 +34,17 @@ class TailWorkshopGameLayer(GameLayer):
         self.add_entity(CollectibleItem(1200, 430, "coal"))
 
     def draw_door(self, map_data, x, y):
+
         for dy, oy in enumerate(range(2, 5)):
             for dx, ox in enumerate(range(2, 6)):
                 map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
     def setup_map(self, viewpoint: Viewpoint) -> Tilemap:
+        """
+        Create and configure the tilemap structure for the workshop room.
+        :param viewpoint: Screen offset mapping Viewpoint instance
+        :return: Initialized Tilemap object
+        """
         tiles_surf = pygame.image.load("assets/images/tilemap/tilemap.png").convert_alpha()
         tiled_image = TiledImage(tiles_surf, tile_size=8)
         map_data = {}
@@ -72,10 +78,15 @@ class TailWorkshopGameLayer(GameLayer):
         self.spawn_collectibles()
 
     def event(self, event):
+        """
+        Handle user input keypresses and click events for workshop interactions.
+        :param event: pygame.event.Event instance
+        """
         if self.state == "CRAFTING":
             self.handle_menu_event(event)
             return
         if event.type == KEYDOWN and event.key == K_f:
+
             furnace_dist = max(abs(self.player.x - self.furnace.x), abs(self.player.y - self.furnace.y))
             crafting_dist = max(abs(self.player.x - self.crafting_table.x), abs(self.player.y - self.crafting_table.y))
             if furnace_dist < 60:
@@ -96,15 +107,18 @@ class TailWorkshopGameLayer(GameLayer):
         if event.type == MOUSEBUTTONDOWN and event.button == 1:
             mx, my = pygame.mouse.get_pos()
             if self.state == "CRAFTING":
+
                 self.player.add_item("keychip", 1)
                 self.player.add_item("igniter", 1)
                 self.player.add_item("alpine_resin", 14)
                 self.player.add_item("frozen_scrap", 14)
+                
                 container = pygame.Rect(275, 130, 450, 440)
                 r1 = pygame.Rect(container.x + 20, container.y + 110, 410, 75)
                 r2 = pygame.Rect(container.x + 20, container.y + 195, 410, 75)
                 r3 = pygame.Rect(container.x + 20, container.y + 280, 410, 75)
                 close_rect = pygame.Rect(container.x + 20, container.y + 375, 410, 45)
+                
                 if r1.collidepoint(mx, my):
                     if not self.player.has_item("ak47"):
                         if self.player.get_item_count("frozen_scrap") >= 1 and self.player.get_item_count("alpine_resin") >= 1:
@@ -125,6 +139,10 @@ class TailWorkshopGameLayer(GameLayer):
                     self.state = "NORMAL"
 
     def paint_hud(self, surface: pygame.Surface):
+        """
+        Draw on-screen item collection/furnace prompts relative to player proximity.
+        :param surface: Target drawing pygame.Surface
+        """
         font = Fonts.Jersey_10(24)
         viewpoint = self.tilemap.viewpoint
         furnace_dist = max(abs(self.player.x - self.furnace.x), abs(self.player.y - self.furnace.y))
@@ -149,6 +167,10 @@ class TailWorkshopGameLayer(GameLayer):
             surface.blit(prompt, (px, py))
 
     def paint_crafting_ui(self, surface: pygame.Surface):
+        """
+        Draw the interactive item crafting selection screen menu overlay.
+        :param surface: Target drawing pygame.Surface
+        """
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         overlay.fill((5, 5, 5, 200))
         surface.blit(overlay, (0, 0))
@@ -238,6 +260,7 @@ class TailWorkshopGameLayer(GameLayer):
                 if self.player.rect.colliderect(e.rect):
                     self.player.add_item(e.item_type, 1)
                     self.remove_entity(e)
+                    
         if self.player.x < 15:
             self.player.transition_x = 900
             self.player.transition_y = 500
@@ -251,6 +274,10 @@ class TailWorkshopGameLayer(GameLayer):
             return
 
     def paint(self, surface: pygame.Surface):
+        """
+        Draw the game layer environment and active menu panels.
+        :param surface: Target drawing pygame.Surface
+        """
         super().paint(surface)
         if self.state == "CRAFTING":
             self.paint_crafting_ui(surface)
@@ -273,8 +300,8 @@ class TailWorkshopGameLayer(GameLayer):
         ]
         paint_debug_lines(surface, lines)
 
-
 class TailWorkshopScene(LayeredScene):
+
     def __init__(self):
         super().__init__()
         self.game_layer = TailWorkshopGameLayer()
@@ -285,3 +312,4 @@ class TailWorkshopScene(LayeredScene):
 
     def reset(self):
         self.game_layer.reset()
+

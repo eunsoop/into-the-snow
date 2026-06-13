@@ -5,9 +5,16 @@ import pygame
 from entity.base import Entity
 from entity.projectile import Bullet
 
-
 class Boss(Entity):
+
     def __init__(self, x: float, y: float, min_y: float, max_y: float):
+        """
+        Initialize the Boss.
+        :param x: Initial X coordinate
+        :param y: Initial Y coordinate
+        :param min_y: Minimum vertical boundary
+        :param max_y: Maximum vertical boundary
+        """
         super().__init__(x, y)
         self.min_y = min_y
         self.max_y = max_y
@@ -44,9 +51,16 @@ class Boss(Entity):
         pygame.draw.rect(surface, (180, 0, 150), self.rect)
         pygame.draw.rect(surface, (255, 215, 0), self.rect, 3)
 
-
 class Guard(Entity):
+
     def __init__(self, x: float, y: float, min_x: float, max_x: float):
+        """
+        Initialize the Guard.
+        :param x: Initial X coordinate
+        :param y: Initial Y coordinate
+        :param min_x: Minimum horizontal boundary
+        :param max_x: Maximum horizontal boundary
+        """
         super().__init__(x, y)
         self.min_x = min_x
         self.max_x = max_x
@@ -94,13 +108,14 @@ class Guard(Entity):
             pygame.draw.rect(surface, (80, 80, 220), self.rect)
             pygame.draw.rect(surface, (150, 150, 255), self.rect, 2)
         else:
+
             pygame.draw.rect(surface, (180, 10, 10), self.rect)
             pygame.draw.rect(surface, (255, 100, 100), self.rect, 2)
+            
             view_x = self.rect.x - (int(self.x) - self.width // 2)
             view_y = self.rect.y - (int(self.y) - self.height // 2)
             screen_los = self.los_rect.move(view_x, view_y)
             pygame.draw.rect(surface, (255, 50, 50), screen_los, 1)
-
 
 class DetachmentBoss(Boss):
     LEFT_FLOOR_Y = 540.0
@@ -112,6 +127,11 @@ class DetachmentBoss(Boss):
     RIGHT_MIN_X = 700.0
 
     def __init__(self, x, y):
+        """
+        Initialize the DetachmentBoss.
+        :param x: Initial X coordinate
+        :param y: Initial Y coordinate
+        """
         super().__init__(x, y, 100, 100)
         self.speed = 130
         self.vy = 0.0
@@ -128,6 +148,10 @@ class DetachmentBoss(Boss):
         self.hit_flash = 0.0
 
     def _current_floor(self):
+        """
+        Determine the floor Y-coordinate based on the boss's current horizontal position.
+        :return: Floor Y position in pixels
+        """
         coupling_severed = getattr(self.layer, 'coupling_severed', False)
         if self.x <= self.LEFT_MAX_X + 100:
             return self.LEFT_FLOOR_Y
@@ -140,6 +164,7 @@ class DetachmentBoss(Boss):
         coupling_severed = getattr(self.layer, 'coupling_severed', False)
         landed = False
         right_min = self.RIGHT_MIN_X + getattr(self.layer, 'separation_offset', 0.0)
+        
         if self.x >= right_min and self.y >= self.RIGHT_FLOOR_Y and self.vy >= 0:
             self.y = self.RIGHT_FLOOR_Y
             self.vy = 0.0
@@ -161,23 +186,28 @@ class DetachmentBoss(Boss):
         dt = self.layer.get_game().get_dt()
         player = self.layer.player
         coupling_severed = getattr(self.layer, 'coupling_severed', False)
+        
         self.vy += 1200.0 * dt
         self.y += self.vy * dt
         self._apply_platform_collision()
+        
         self.knockback_timer -= dt
         self.hit_flash = max(0.0, self.hit_flash - dt)
         if self.knockback_timer > 0.0:
             self.x += self.knockback_vx * dt
             self.knockback_vx *= max(0.0, 1.0 - 8.0 * dt)
         else:
+
             if player:
                 if player.x < self.x:
                     self.x -= self.speed * dt
                 else:
                     self.x += self.speed * dt
+                    
         self.jump_cooldown -= dt
         if self.on_ground and self.jump_cooldown <= 0.0:
             should_jump = False
+
             if self.x > self.RIGHT_MIN_X - 20 and self.x < self.COUPLER_RIGHT + 40:
                 should_jump = True
             elif self.COUPLER_LEFT - 40 <= self.x <= self.COUPLER_LEFT + 60:
@@ -188,14 +218,17 @@ class DetachmentBoss(Boss):
                 self.vy = -480.0
                 self.on_ground = False
                 self.jump_cooldown = 1.2
+                
         self.x = max(80.0, self.x)
         separation_offset = getattr(self.layer, 'separation_offset', 0.0)
         self.x = min(920.0 + separation_offset, self.x)
         self.rect.center = (int(self.x), int(self.y + self.height // 2))
+        
         if self.x <= self.LEFT_MAX_X and not coupling_severed:
             if self.on_ground:
                 self.layer.get_game().set_scene("gameover")
                 return
+                
         self.shoot_timer += dt
         if self.shoot_timer >= .15:
             self.shoot_timer = 0.0
@@ -206,18 +239,26 @@ class DetachmentBoss(Boss):
                 self.layer.add_entity(b)
 
     def paint(self, surface: pygame.Surface):
+        """
+        Draw boss rectangles, scanning eyes, gun barrels, and HP status bars.
+        :param surface: Target drawing Surface
+        """
+
         body_color = (255, 200, 200) if self.hit_flash > 0 else (50, 20, 20)
         pygame.draw.rect(surface, body_color, self.rect, border_radius=6)
         pygame.draw.rect(surface, (220, 60, 60), self.rect, width=2, border_radius=6)
+        
         eye = (self.rect.centerx - 8, self.rect.centery - 6)
         pygame.draw.circle(surface, (255, 60, 60), eye, 9)
         pygame.draw.circle(surface, (255, 200, 200), eye, 4)
+        
         pygame.draw.line(surface, (180, 180, 180),
                          (self.rect.left - 10, self.rect.centery),
                          (self.rect.left, self.rect.centery), 4)
         pygame.draw.line(surface, (180, 180, 180),
                          (self.rect.right, self.rect.centery),
                          (self.rect.right + 10, self.rect.centery), 4)
+                         
         bar_w = self.width
         bar_x = self.rect.x
         bar_y = self.rect.y - 10

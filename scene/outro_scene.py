@@ -4,10 +4,22 @@ from core import LayeredScene, Layer, Fonts
 from scene.background_layers import WeightedBackgroundLayer, RepeatingImageLayer
 
 class DetachingTrainLayer(Layer):
+
     def __init__(self, scale: float = 2, offset_x: int = 100, offset_y: int = 636):
+        """
+        Initialize the detaching train layer with scale and position.
+        :param scale: Size scale multiplier
+        :param offset_x: Horizontal starting pixel offset
+        :param offset_y: Vertical starting pixel offset
+        """
         super().__init__()
         
         def scale_image(path):
+            """
+            Load and scale a train element image.
+            :param path: Filesystem path to image asset
+            :return: Scaled pygame.Surface image
+            """
             img = pygame.image.load(path)
             return pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
 
@@ -34,9 +46,14 @@ class DetachingTrainLayer(Layer):
         pass
 
     def paint(self, surface: pygame.Surface):
+        """
+        Draw the decoupled sub-engine drifting away from the rest of the train.
+        :param surface: The destination drawing pygame.Surface
+        """
         if self.game:
             dt = self.game.get_dt()
             self.timer += dt
+
             if self.timer > 1.0:
                 self.separation_distance += 150.0 * dt
 
@@ -51,6 +68,7 @@ class DetachingTrainLayer(Layer):
             off += img.get_width()
 
 class OutroScene(LayeredScene):
+
     def __init__(self):
         super().__init__()
         self.train_layer = DetachingTrainLayer(scale=2, offset_y=636, offset_x=100)
@@ -73,8 +91,13 @@ class OutroScene(LayeredScene):
         self.timer = 0.0
 
     def paint(self, surface: pygame.Surface):
+        """
+        Draw the outro cutscene including decoupled train movement and announcement text.
+        :param surface: The destination drawing pygame.Surface
+        """
         dt = self.game.get_dt()
         self.timer += dt
+
         if self.timer > 6.0:
             self.game.set_scene("gamewin")
         super().paint(surface)
@@ -94,3 +117,4 @@ class OutroScene(LayeredScene):
         self.timer = 0.0
         self.train_layer.timer = 0.0
         self.train_layer.separation_distance = 0.0
+

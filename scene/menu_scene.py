@@ -4,13 +4,19 @@ from pygame import Surface, Rect
 from core import LayeredScene, Layer, UserInterfaceLayer, Fonts
 from ui import Button, Label
 
-
 class MenuBackgroundLayer(Layer):
+
     def __init__(self):
         super().__init__()
 
         def scale_image(path):
+            """
+            Load and scale a background layer image to fit screen dimensions.
+            :param path: Relative filesystem path to target background image asset
+            :return: Scaled pygame.Surface image
+            """
             img = pygame.image.load(path)
+
             scale = max(1000 / img.get_width(), 700 / img.get_height())
             return pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
 
@@ -27,16 +33,24 @@ class MenuBackgroundLayer(Layer):
         pass
 
     def paint(self, surface: Surface):
+        """
+        Scroll the middle background segment and draw other foreground layers.
+        :param surface: Target drawing Surface
+        """
+
         surface.blit(self.bg, (0, 0))
+        
         if self.progress < -1:
             self.progress = 2
         self.progress -= self.get_game().get_dt() * 0.1
+        
         surface.blit(self.target, (int(self.progress * self.target.get_width()), 0))
+        
         for fg in self.fg:
             surface.blit(fg, (0, 0))
 
-
 class MenuScene(LayeredScene):
+
     def __init__(self):
         super().__init__()
         self.show_settings = False
@@ -86,6 +100,7 @@ class MenuScene(LayeredScene):
 
     def paint(self, surface: Surface):
         super().paint(surface)
+        
         if self.show_settings:
             panel_rect = Rect(450, 200, 400, 260)
             pygame.draw.rect(surface, (40, 40, 50), panel_rect)
@@ -97,6 +112,7 @@ class MenuScene(LayeredScene):
             surface.blit(font_text.render("- F Key: Interact", True, (220, 220, 220)), (480, 310))
             surface.blit(font_text.render("- Mouse Click: Shoot", True, (220, 220, 220)), (480, 350))
             surface.blit(font_text.render("- Goal: Fix the Engine", True, (220, 220, 255)), (480, 390))
+            
         elif self.show_credits:
             panel_rect = Rect(450, 200, 400, 260)
             pygame.draw.rect(surface, (40, 40, 50), panel_rect)
@@ -108,3 +124,4 @@ class MenuScene(LayeredScene):
             surface.blit(font_text.render("ICS3U Final Project", True, (220, 220, 220)), (480, 310))
             surface.blit(font_text.render("Made with Pygame", True, (220, 220, 220)), (480, 350))
             surface.blit(font_text.render("Thank you!", True, (200, 255, 200)), (480, 400))
+
