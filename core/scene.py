@@ -4,7 +4,6 @@ from typing import final
 import pygame
 from pygame import Surface
 
-
 class Scene(ABC):
     def __init__(self):
         self.game = None
@@ -14,6 +13,10 @@ class Scene(ABC):
 
     @final
     def get_game(self):
+        """
+        Retrieve the main Game engine instance controlling this scene.
+        :return: Parent Game instance
+        """
         return self.game
 
     @abstractmethod
@@ -27,9 +30,12 @@ class Scene(ABC):
     def reset(self):
         pass
 
-
 class LayeredScene(Scene):
     def __init__(self, layers: list = None):
+        """
+        Initialize the LayeredScene with an optional list of visual layers.
+        :param layers: List of Layer instances to paint sequentially
+        """
         super().__init__()
         self.layers = layers if layers is not None else []
         self.effectors = []
@@ -74,6 +80,7 @@ class LayeredScene(Scene):
     def paint(self, surface: Surface):
         dt = self.game.get_dt() if self.game else 0.0
         for layer in self.layers:
+
             layer.surface.fill((0, 0, 0, 0))
             layer.paint(layer.surface)
 
@@ -88,3 +95,4 @@ class LayeredScene(Scene):
                     eff.apply_post(layer.surface)
 
             surface.blit(layer.surface, (int(offset_x), int(offset_y)))
+

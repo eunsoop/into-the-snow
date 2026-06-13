@@ -6,7 +6,6 @@ from pygame import Surface
 
 from core.effector import Effector
 
-
 class Layer(ABC):
     def __init__(self):
         self.game = None
@@ -23,6 +22,10 @@ class Layer(ABC):
 
     @final
     def get_game(self):
+        """
+        Get the main Game engine instance.
+        :return: Parent Game instance
+        """
         return self.game
 
     @abstractmethod
@@ -35,7 +38,6 @@ class Layer(ABC):
 
     def reset(self):
         pass
-
 
 class GameLayer(Layer):
     def __init__(self):
@@ -59,6 +61,10 @@ class GameLayer(Layer):
         pass
 
     def paint(self, surface: Surface):
+        """
+        Paint the game layer including its entities and camera tracking boundaries.
+        :param surface: The destination drawing pygame.Surface
+        """
         self.update()
         for e in self.entities:
             e.update()
@@ -66,6 +72,7 @@ class GameLayer(Layer):
         if hasattr(self, 'tilemap') and self.tilemap:
             player = getattr(self, 'player', None)
             if player:
+
                 width, height = surface.get_width(), surface.get_height()
                 view_x = width / 2 - player.x
                 view_y = height / 2 - player.y
@@ -102,3 +109,4 @@ class GameLayer(Layer):
                 e.rect.center = orig_center
             else:
                 e.paint(surface)
+

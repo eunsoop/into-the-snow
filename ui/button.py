@@ -6,8 +6,8 @@ from pygame import Surface
 from core import RichElement, RichElementParameter
 from ui.label import Label
 
-
 class Button(RichElement):
+
     def __init__(
         self,
         size: tuple[int, int],
@@ -16,12 +16,26 @@ class Button(RichElement):
         disabled: bool = False,
         on_pressed: Callable | None = None,
     ):
+        """
+        Initialize the Button.
+        :param size: Tuple (width, height) specifying button dimensions
+        :param label: Optional Label widget to display centered on the button
+        :param rich: RichElementParameter style parameter settings
+        :param disabled: If True, button ignores events and displays with gray overlay
+        :param on_pressed: Optional callback function triggered on mouse click release/down
+        """
         super().__init__(size, rich)
         self.label = label
         self.disabled = disabled
         self.on_pressed = on_pressed
 
     def update(self, surface: Surface, coordinate: tuple[int, int]):
+        """
+        Draw the button background, centered label, and disabled overlays.
+        :param surface: The destination Surface
+        :param coordinate: Tuple (x, y) coordinates representing top-left corner
+        """
+
         if isinstance(self.rich_parameter.background, pygame.Surface):
             surface.blit(self.rich_parameter.background, dest=(*coordinate, *self.get_size()))
         if isinstance(self.rich_parameter.background, tuple):
@@ -30,11 +44,13 @@ class Button(RichElement):
         if self.label:
             size = self.label.get_rendered_size()
             self.label.update(surface, (coordinate[0] + self.size[0] // 2 - size[0] // 2, coordinate[1] + self.size[1] // 2 - size[1] // 2))
+
         if self.disabled:
             pygame.draw.rect(surface, (128, 128, 128), (*coordinate, *self.get_size()), self.rich_parameter.radius)
 
     def event(self, event: pygame.event.Event):
         if self.disabled or self.on_pressed is None:
             return
+
         if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
             self.on_pressed()
