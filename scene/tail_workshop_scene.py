@@ -16,7 +16,6 @@ class TailWorkshopGameLayer(GameLayer):
         self.crafting_table = CraftingTable(1000, 220)
         self.tilemap.add_stationary(self.furnace)
         self.tilemap.add_stationary(self.crafting_table)
-        self.add_effector(ShakeEffector(duration=0.1, intensity=10.0))
         self.player = None
         self.state = "NORMAL"
         self.fire_cooldown_timer = 0.15
@@ -29,9 +28,29 @@ class TailWorkshopGameLayer(GameLayer):
                 self.remove_entity(e)
         self.add_entity(CollectibleItem(300, 430, "frozen_scrap"))
         self.add_entity(CollectibleItem(800, 200, "alpine_resin"))
+        self.add_entity(CollectibleItem(600, 430, "alpine_resin"))
         self.add_entity(CollectibleItem(1450, 430, "frozen_scrap"))
         self.add_entity(CollectibleItem(600, 350, "coal"))
         self.add_entity(CollectibleItem(1200, 430, "coal"))
+
+    def draw_group_of_objects(self, map_data, x, y):
+        self.draw_boxes(map_data, 6+x, 4+y)
+        self.draw_boxes(map_data, 1+x, 9+y)
+        self.draw_objects(map_data, 4+x, 7+y)
+        self.draw_boxes(map_data, 7+x, 7+y)
+        self.draw_boxes(map_data, 10+x, 6+y)
+        self.draw_objects(map_data, 11+x, 9+y)
+
+
+    def draw_boxes(self, map_data, x, y):
+        for dy, oy in enumerate(range(7, 9)):
+            for dx, ox in enumerate(range(2, 4)):
+                map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
+
+    def draw_objects(self, map_data, x, y):
+        for dy, oy in enumerate(range(7, 9)):
+            for dx, ox in enumerate(range(4, 6)):
+                map_data[y + dy][x + dx] = (oy * 6 + ox, (lambda: False))
 
     def draw_door(self, map_data, x, y):
         for dy, oy in enumerate(range(2, 5)):
@@ -48,6 +67,10 @@ class TailWorkshopGameLayer(GameLayer):
         self.draw_door(map_data, 49, 1)
         for y in range(4, 12):
             map_data[y] = [(2, (lambda: True)) for _ in range(56)]
+        self.draw_group_of_objects(map_data, 1, 0)
+        self.draw_group_of_objects(map_data, 14, 1)
+        self.draw_group_of_objects(map_data, 27, 0)
+        map_data[12] = [(43, (lambda: False)) for _ in range(56)]
         return Tilemap(tiled_image, map_data, viewpoint)
 
     def on_enter(self):
@@ -96,10 +119,6 @@ class TailWorkshopGameLayer(GameLayer):
         if event.type == MOUSEBUTTONDOWN and event.button == 1:
             mx, my = pygame.mouse.get_pos()
             if self.state == "CRAFTING":
-                self.player.add_item("keychip", 1)
-                self.player.add_item("igniter", 1)
-                self.player.add_item("alpine_resin", 14)
-                self.player.add_item("frozen_scrap", 14)
                 container = pygame.Rect(275, 130, 450, 440)
                 r1 = pygame.Rect(container.x + 20, container.y + 110, 410, 75)
                 r2 = pygame.Rect(container.x + 20, container.y + 195, 410, 75)

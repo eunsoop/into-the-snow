@@ -18,16 +18,16 @@ class Effector:
 
 
 class ShakeEffector(Effector):
-    def __init__(self, duration: float, intensity: float):
+    def __init__(self, duration: float, intensity: float, start_duration: float = 0):
         self.duration = duration
         self.intensity = intensity
-        self.elapsed = 0.0
+        self.elapsed = -start_duration
 
     def update(self, dt: float):
         self.elapsed += dt
 
     def apply_offset(self) -> tuple[float, float]:
-        if self.is_finished():
+        if self.is_finished() or self.elapsed < 0:
             return 0.0, 0.0
         ratio = 1.0 - (self.elapsed / self.duration)
         current_intensity = self.intensity * ratio

@@ -83,10 +83,6 @@ class DetachmentGameLayer(GameLayer):
                 self.boss_spawned = True
                 self.boss = DetachmentBoss(800, 344)
                 self.add_entity(self.boss)
-                if not self.player.has_item("ak47"):
-                    self.player.add_item("ak47", 1)
-                    self.hud_message = "EMERGENCY: AK-47 RIFLE ACQUIRED"
-                    self.hud_message_timer = 3.0
 
     def reset(self):
         if self.player and self.player in self.entities:
@@ -152,13 +148,14 @@ class DetachmentGameLayer(GameLayer):
             self.player.x = max(100.0, min(900.0, self.player.x))
         else:
             if self.player.x < 15:
-                self.player.transition_x = 300
+                self.player.transition_x = 400
                 self.player.transition_y = 400
                 self.remove_entity(self.player)
                 self.game.set_scene("ingame.engineroom")
                 return
             elif self.player.x > 985:
                 self.player.transition_x = 100
+                self.player.transition_y = 300
                 self.remove_entity(self.player)
                 self.game.set_scene("ingame.tailworkshop")
                 return
